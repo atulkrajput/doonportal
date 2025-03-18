@@ -35,7 +35,7 @@ An AI-powered city portal for Dehradun that automatically shows trends, social u
 
 ### Steps
 ```sh
-git clone https://github.com/your-username/dehradun-city-portal.git
+git clone https://github.com/atulkrajput/dehradun-city-portal.git
 cd dehradun-city-portal
 npm install
 npm run dev
