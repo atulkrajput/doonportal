@@ -1,0 +1,124 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import Image from 'next/image';
+import PageLayout from '@/components/layouts/PageLayout';
+import SectionWrapper from '@/components/ui/SectionWrapper';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import { getAllPosts } from '@/lib/blog';
+import { pageSEO } from '@/data/seo';
+
+const POSTS_PER_PAGE = 9;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = pageSEO.blog;
+  return {
+    title: seo.title,
+    description: seo.description,
+    keywords: seo.keywords,
+    openGraph: {
+      title: seo.title,
+      description: seo.description,
+      images: seo.ogImage ? [seo.ogImage] : [],
+    },
+  };
+}
+
+interface BlogPageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function BlogPage({ searchParams }: BlogPageProps) {
+  const params = await searchParams;
+  const seo = pageSEO.blog;
+  const allPosts = getAllPosts();
+  const currentPage = Math.max(1, parseInt(params.page || '1', 10));
+  const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
+  const posts = allPosts.slice(
+    (currentPage - 1) * POSTS_PER_PAGE,
+    currentPage * POSTS_PER_PAGE
+  );
+
+  return (
+    <PageLayout seo={seo}>
+      <main>
+        <SectionWrapper className="bg-gradient-to-br from-brand-50 via-white to-brand-100">
+          <div className="mx-auto max-w-3xl text-center">
+            <h1 className="text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl">
+              Blog
+            </h1>
+            <p className="mt-6 text-lg leading-relaxed text-neutral-600">
+              Insights on business automation, school management, retail technology, and dairy farm operations.
+            </p>
+          </div>
+        </SectionWrapper>
+
+        <SectionWrapper>
+          {posts.length === 0 ? (
+            <p className="text-center text-neutral-600">No blog posts yet. Check back soon!</p>
+          ) : (
+            <>
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                {posts.map((post) => (
+                  <Link key={post.slug} href={`/blog/${post.slug}`} className="block">
+                    <Card hover className="h-full">
+                      <div className="relative mb-4 aspect-video overflow-hidden rounded-lg bg-neutral-100">
+                        <Image
+                          src={post.featuredImage}
+                          alt={post.title}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
+                      </div>
+                      <time className="text-sm text-neutral-500" dateTime={post.date}>
+                        {new Date(post.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </time>
+                      <h2 className="mt-2 text-xl font-semibold text-neutral-900">
+                        {post.title}
+                      </h2>
+                      <p className="mt-2 text-neutral-600">{post.excerpt}</p>
+                      <span className="mt-4 inline-block text-sm font-medium text-brand-600">
+                        Read more →
+                      </span>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <nav className="mt-12 flex items-center justify-center gap-2" aria-label="Blog pagination">
+                  {currentPage > 1 && (
+                    <Button href={`/blog?page=${currentPage - 1}`} variant="outline" size="sm">
+                      Previous
+                    </Button>
+                  )}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      href={`/blog?page=${page}`}
+                      variant={page === currentPage ? 'primary' : 'outline'}
+                      size="sm"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                  {currentPage < totalPages && (
+                    <Button href={`/blog?page=${currentPage + 1}`} variant="outline" size="sm">
+                      Next
+                    </Button>
+                  )}
+                </nav>
+              )}
+            </>
+          )}
+        </SectionWrapper>
+      </main>
+    </PageLayout>
+  );
+}

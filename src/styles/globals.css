@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-sans text-neutral-900 bg-white;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-bold tracking-tight;
+  }
+
+  h1 {
+    @apply text-display-lg md:text-display-xl;
+  }
+
+  h2 {
+    @apply text-heading-xl md:text-display;
+  }
+
+  h3 {
+    @apply text-heading-lg md:text-heading-xl;
+  }
+
+  h4 {
+    @apply text-heading md:text-heading-lg;
+  }
+
+  p {
+    @apply text-body text-neutral-600;
+  }
+
+  a {
+    @apply text-brand-600 hover:text-brand-700 transition-colors;
+  }
+
+  /* Focus visible styles for accessibility */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+
+  /* Remove default focus outline, rely on focus-visible */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
