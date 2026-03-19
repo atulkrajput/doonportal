@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import DemoForm from '@/components/forms/DemoForm';
 import ContactForm from '@/components/forms/ContactForm';
 import PageLayout from '@/components/layouts/PageLayout';
 import SectionWrapper from '@/components/ui/SectionWrapper';
+import AnimatedSection from '@/components/ui/AnimatedSection';
 import { pageSEO } from '@/data/seo';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,6 +16,9 @@ export async function generateMetadata(): Promise<Metadata> {
       title: seo.title,
       description: seo.description,
       images: seo.ogImage ? [seo.ogImage] : [],
+    },
+    alternates: {
+      canonical: seo.canonical,
     },
   };
 }
@@ -36,10 +41,21 @@ export default function ContactPage() {
         </SectionWrapper>
 
         <SectionWrapper>
-          <div className="mx-auto max-w-2xl">
-            <h2 className="mb-6 text-2xl font-bold text-neutral-900">Send Us a Message</h2>
-            <ContactForm />
-          </div>
+          <AnimatedSection variant="fade-in">
+            <div className="grid gap-12 lg:grid-cols-2">
+              <div>
+                <h2 className="mb-6 text-2xl font-bold text-neutral-900">Send Us a Message</h2>
+                <ContactForm />
+              </div>
+              <div>
+                <h2 className="mb-6 text-2xl font-bold text-neutral-900">Request a Demo</h2>
+                <p className="mb-6 text-neutral-600">
+                  Interested in seeing our software in action? Fill out the demo request form and we&apos;ll schedule a personalized walkthrough.
+                </p>
+                <DemoForm />
+              </div>
+            </div>
+          </AnimatedSection>
         </SectionWrapper>
       </main>
     </PageLayout>

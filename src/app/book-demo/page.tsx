@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import DemoForm from '@/components/forms/DemoForm';
 import PageLayout from '@/components/layouts/PageLayout';
 import SectionWrapper from '@/components/ui/SectionWrapper';
-import { getProductBySlug } from '@/data/products';
+import AnimatedSection from '@/components/ui/AnimatedSection';
 import { pageSEO } from '@/data/seo';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,15 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-interface BookDemoPageProps {
-  searchParams: Promise<{ product?: string }>;
-}
-
-export default async function BookDemoPage({ searchParams }: BookDemoPageProps) {
-  const params = await searchParams;
+export default function BookDemoPage() {
   const seo = pageSEO.bookDemo;
-  const productSlug = params.product;
-  const product = productSlug ? getProductBySlug(productSlug) : undefined;
 
   return (
     <PageLayout seo={seo}>
@@ -38,17 +31,17 @@ export default async function BookDemoPage({ searchParams }: BookDemoPageProps) 
               Book a Demo
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-neutral-600">
-              {product
-                ? `See ${product.name} in action. Fill out the form below and our team will schedule a personalized demo for you.`
-                : 'Schedule a free demo of our automation software. Fill out the form below and our team will get in touch.'}
+              Schedule a free demo of our automation software. Fill out the form below and our team will get in touch.
             </p>
           </div>
         </SectionWrapper>
 
         <SectionWrapper>
-          <div className="mx-auto max-w-2xl">
-            <DemoForm productContext={product?.name} />
-          </div>
+          <AnimatedSection variant="fade-in">
+            <div className="mx-auto max-w-2xl">
+              <DemoForm />
+            </div>
+          </AnimatedSection>
         </SectionWrapper>
       </main>
     </PageLayout>

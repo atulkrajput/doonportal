@@ -1,3 +1,13 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": "next/core-web-vitals",
+  "overrides": [
+    {
+      "files": ["src/__tests__/**/*"],
+      "rules": {
+        "react/display-name": "off",
+        "@next/next/no-img-element": "off",
+        "jsx-a11y/alt-text": "off"
+      }
+    }
+  ]
 }

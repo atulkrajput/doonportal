@@ -12,11 +12,33 @@ vi.mock('framer-motion', () => ({
     span: React.forwardRef(({ children, ...props }: any, ref: any) => (
       <span ref={ref} {...props}>{children}</span>
     )),
+    h1: React.forwardRef(({ children, ...props }: any, ref: any) => (
+      <h1 ref={ref} {...props}>{children}</h1>
+    )),
+    p: React.forwardRef(({ children, ...props }: any, ref: any) => (
+      <p ref={ref} {...props}>{children}</p>
+    )),
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
   useInView: () => true,
-  useScroll: () => ({ scrollY: { get: () => 0 } }),
+  useScroll: () => ({ scrollYProgress: { get: () => 0 } }),
+  useTransform: () => 0,
 }));
+
+// Mock window.matchMedia for HeroAnimation
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
 
 // Mock next/image
 vi.mock('next/image', () => ({
@@ -51,7 +73,7 @@ describe('HeroSection', () => {
         ctaButtons={[]}
       />
     );
-    expect(screen.getByText('Test Headline')).toBeInTheDocument();
+    expect(screen.getByLabelText('Test Headline')).toBeInTheDocument();
     expect(screen.getByText('Test Subheadline')).toBeInTheDocument();
   });
 

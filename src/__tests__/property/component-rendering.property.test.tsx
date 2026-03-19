@@ -9,10 +9,36 @@ vi.mock('framer-motion', () => ({
     div: React.forwardRef(({ children, ...props }: any, ref: any) => (
       <div ref={ref} {...props}>{children}</div>
     )),
+    span: React.forwardRef(({ children, ...props }: any, ref: any) => (
+      <span ref={ref} {...props}>{children}</span>
+    )),
+    h1: React.forwardRef(({ children, ...props }: any, ref: any) => (
+      <h1 ref={ref} {...props}>{children}</h1>
+    )),
+    p: React.forwardRef(({ children, ...props }: any, ref: any) => (
+      <p ref={ref} {...props}>{children}</p>
+    )),
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
   useInView: () => true,
+  useScroll: () => ({ scrollYProgress: { get: () => 0 } }),
+  useTransform: () => 0,
 }));
+
+// Mock window.matchMedia for HeroAnimation
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
 
 vi.mock('next/image', () => ({
   default: (props: any) => {
@@ -113,18 +139,20 @@ describe('Property 14: Reusable components render different prop values', () => 
         (headline1, headline2) => {
           fc.pre(headline1 !== headline2);
 
+          const normalize = (s: string) => s.split(/\s+/).filter(Boolean).join(' ');
+
           const { container: c1, unmount: u1 } = render(
             <HeroSection headline={headline1} subheadline="Sub" ctaButtons={[]} />
           );
           const h1a = c1.querySelector('h1');
-          expect(h1a?.textContent).toBe(headline1);
+          expect(h1a?.textContent).toBe(normalize(headline1));
           u1();
 
           const { container: c2, unmount: u2 } = render(
             <HeroSection headline={headline2} subheadline="Sub" ctaButtons={[]} />
           );
           const h1b = c2.querySelector('h1');
-          expect(h1b?.textContent).toBe(headline2);
+          expect(h1b?.textContent).toBe(normalize(headline2));
           u2();
         }
       ),

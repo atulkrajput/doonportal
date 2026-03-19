@@ -1,9 +1,10 @@
 'use client';
 
-import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
 import Button from '@/components/ui/Button';
 import SectionWrapper from '@/components/ui/SectionWrapper';
+import AnimatedSection from '@/components/ui/AnimatedSection';
+import GradientBackground from '@/components/ui/GradientBackground';
+import { trackCTAClick } from '@/lib/analytics';
 
 interface CTASectionProps {
   headline: string;
@@ -24,11 +25,13 @@ const variantStyles: Record<string, { wrapper: string; headline: string; subhead
     subheadline: 'text-neutral-300',
   },
   gradient: {
-    wrapper: 'bg-gradient-to-r from-brand-600 to-brand-800',
+    wrapper: '',
     headline: 'text-white',
     subheadline: 'text-brand-100',
   },
 };
+
+const ctaGradientColors = ['from-neutral-900', 'via-neutral-800', 'to-neutral-900'];
 
 export default function CTASection({
   headline,
@@ -36,37 +39,43 @@ export default function CTASection({
   ctaButton,
   variant = 'default',
 }: CTASectionProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '-100px' });
   const styles = variantStyles[variant];
 
+  const content = (
+    <div className="text-center">
+      <h2 className={`text-3xl font-bold tracking-tight sm:text-4xl ${styles.headline}`}>
+        {headline}
+      </h2>
+      {subheadline && (
+        <p className={`mx-auto mt-4 max-w-2xl text-lg ${styles.subheadline}`}>
+          {subheadline}
+        </p>
+      )}
+      <div className="mt-8">
+        <Button
+          href={ctaButton.href}
+          variant={variant === 'default' ? 'primary' : 'secondary'}
+          size="lg"
+          onClick={() => trackCTAClick(ctaButton.label, 'cta-section')}
+        >
+          {ctaButton.label}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const sectionContent =
+    variant === 'gradient' ? (
+      <GradientBackground colors={ctaGradientColors} animated={true}>
+        <SectionWrapper>{content}</SectionWrapper>
+      </GradientBackground>
+    ) : (
+      <SectionWrapper className={styles.wrapper}>{content}</SectionWrapper>
+    );
+
   return (
-    <SectionWrapper className={styles.wrapper}>
-      <motion.div
-        ref={ref}
-        className="text-center"
-        initial={{ opacity: 0, y: 30 }}
-        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-      >
-        <h2 className={`text-3xl font-bold tracking-tight sm:text-4xl ${styles.headline}`}>
-          {headline}
-        </h2>
-        {subheadline && (
-          <p className={`mx-auto mt-4 max-w-2xl text-lg ${styles.subheadline}`}>
-            {subheadline}
-          </p>
-        )}
-        <div className="mt-8">
-          <Button
-            href={ctaButton.href}
-            variant={variant === 'default' ? 'primary' : 'secondary'}
-            size="lg"
-          >
-            {ctaButton.label}
-          </Button>
-        </div>
-      </motion.div>
-    </SectionWrapper>
+    <AnimatedSection variant="fade-in-up">
+      {sectionContent}
+    </AnimatedSection>
   );
 }

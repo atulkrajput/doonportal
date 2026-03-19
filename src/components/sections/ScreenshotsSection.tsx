@@ -36,6 +36,7 @@ export default function ScreenshotsSection({ screenshots }: ScreenshotsSectionPr
               width={600}
               height={400}
               className="h-auto w-full object-cover"
+              loading="lazy"
             />
             {screenshot.caption && (
               <figcaption className="p-4 text-center text-sm text-neutral-600">

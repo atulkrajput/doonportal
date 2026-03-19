@@ -21,19 +21,20 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-bold tracking-tight;
+    @apply font-heading tracking-tight;
   }
 
   h1 {
-    @apply text-display-lg md:text-display-xl;
+    @apply text-display-lg md:text-display-xl font-bold;
+    letter-spacing: -0.02em;
   }
 
   h2 {
-    @apply text-heading-xl md:text-display;
+    @apply text-heading-xl md:text-display font-semibold;
   }
 
   h3 {
-    @apply text-heading-lg md:text-heading-xl;
+    @apply text-heading-lg md:text-heading-xl font-semibold;
   }
 
   h4 {
@@ -56,5 +57,86 @@
   /* Remove default focus outline, rely on focus-visible */
   :focus:not(:focus-visible) {
     outline: none;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism utility classes */
+  .glass {
+    @apply bg-white/70 backdrop-blur-lg border border-white/20;
+  }
+
+  .glass-dark {
+    @apply bg-neutral-900/70 backdrop-blur-lg border border-neutral-700/30;
+  }
+
+  /* Gradient preset utilities */
+  .gradient-hero {
+    @apply bg-gradient-to-br from-brand-600 via-brand-500 to-accent-500;
+  }
+
+  .gradient-cta {
+    @apply bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900;
+  }
+
+  .gradient-card {
+    @apply bg-gradient-to-br from-brand-50/50 to-accent-50/50;
+  }
+
+  .gradient-section {
+    @apply bg-gradient-to-b from-white via-brand-50/30 to-white;
+  }
+}
+
+/* Gradient background animation keyframes (8s+ cycle) */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+  will-change: background-position;
+}
+
+/* Floating orb animation for HeroAnimation */
+@keyframes floatOrb {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(15px, -20px) scale(1.05);
+  }
+  66% {
+    transform: translate(-10px, 10px) scale(0.95);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.animate-float-orb {
+  animation: floatOrb 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+/*
+ * Touch device graceful degradation
+ * Hover-based animations only apply on devices that support hover.
+ * On touch devices, all content remains visible and accessible without hover.
+ */
+@media (hover: none) {
+  /* Disable scale/shadow/border hover transitions on touch devices to prevent stuck states */
+  .touch-hover-safe:hover {
+    transform: none !important;
+    box-shadow: inherit !important;
   }
 }

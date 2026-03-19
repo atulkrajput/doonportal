@@ -4,24 +4,24 @@ import { getAllSlugs } from '@/lib/blog';
 const SITE_URL = 'https://doonportal.com';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = [
-    '',
-    '/solutions',
-    '/about',
-    '/blog',
-    '/contact',
-    '/book-demo',
-    '/custom-automation',
-    '/products/school-management',
-    '/products/inventory-pos',
-    '/products/dairy-management',
+  const staticRoutes: { route: string; priority: number; changeFreq: 'weekly' | 'monthly' | 'daily' }[] = [
+    { route: '', priority: 1, changeFreq: 'weekly' },
+    { route: '/solutions', priority: 0.9, changeFreq: 'monthly' },
+    { route: '/products/school-management', priority: 0.95, changeFreq: 'monthly' },
+    { route: '/products/inventory-pos', priority: 0.9, changeFreq: 'monthly' },
+    { route: '/products/dairy-management', priority: 0.9, changeFreq: 'monthly' },
+    { route: '/custom-automation', priority: 0.8, changeFreq: 'monthly' },
+    { route: '/about', priority: 0.7, changeFreq: 'monthly' },
+    { route: '/blog', priority: 0.8, changeFreq: 'weekly' },
+    { route: '/contact', priority: 0.7, changeFreq: 'monthly' },
+    { route: '/book-demo', priority: 0.85, changeFreq: 'monthly' },
   ];
 
-  const staticEntries: MetadataRoute.Sitemap = staticRoutes.map((route) => ({
-    url: `${SITE_URL}${route}`,
+  const staticEntries: MetadataRoute.Sitemap = staticRoutes.map((r) => ({
+    url: `${SITE_URL}${r.route}`,
     lastModified: new Date(),
-    changeFrequency: route === '' ? 'weekly' : 'monthly',
-    priority: route === '' ? 1 : route.startsWith('/products') ? 0.9 : 0.8,
+    changeFrequency: r.changeFreq,
+    priority: r.priority,
   }));
 
   const blogSlugs = getAllSlugs();

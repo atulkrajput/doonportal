@@ -1,8 +1,9 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-interface ButtonProps {
+export interface ButtonProps {
   children: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
@@ -42,14 +43,60 @@ export default function Button({
   ariaLabel,
   className = '',
 }: ButtonProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+  const [canHover, setCanHover] = useState(true);
+
+  useEffect(() => {
+    // Detect if the device supports hover (non-touch)
+    const mq = window.matchMedia('(hover: hover)');
+    setCanHover(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setCanHover(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  // On touch devices, skip scale/glow hover effects to prevent stuck states
+  const effectiveHover = canHover && isHovered;
+  const scale = isActive ? 0.97 : effectiveHover ? 1.03 : 1;
+
+  const glowStyle =
+    variant === 'primary' && effectiveHover
+      ? '0 0 20px rgba(26,138,214,0.15), 0 0 40px rgba(26,138,214,0.08)'
+      : undefined;
+
+  const interactionStyle: React.CSSProperties = {
+    transform: `scale(${scale})`,
+    transition: isActive
+      ? 'transform 100ms ease-out, box-shadow 200ms ease-out'
+      : 'transform 200ms ease-out, box-shadow 200ms ease-out',
+    boxShadow: glowStyle,
+  };
+
   const base =
     'inline-flex items-center justify-center font-medium rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
 
   const classes = `${base} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`.trim();
 
+  const hoverHandlers = {
+    onMouseEnter: () => setIsHovered(true),
+    onMouseLeave: () => {
+      setIsHovered(false);
+      setIsActive(false);
+    },
+    onMouseDown: () => setIsActive(true),
+    onMouseUp: () => setIsActive(false),
+  };
+
   if (href) {
     return (
-      <Link href={href} className={classes} aria-label={ariaLabel}>
+      <Link
+        href={href}
+        className={classes}
+        aria-label={ariaLabel}
+        style={interactionStyle}
+        {...hoverHandlers}
+      >
         {children}
       </Link>
     );
@@ -62,6 +109,8 @@ export default function Button({
       disabled={disabled}
       className={classes}
       aria-label={ariaLabel}
+      style={interactionStyle}
+      {...hoverHandlers}
     >
       {children}
     </button>

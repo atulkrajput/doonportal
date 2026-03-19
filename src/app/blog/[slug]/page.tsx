@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import PageLayout from '@/components/layouts/PageLayout';
 import SectionWrapper from '@/components/ui/SectionWrapper';
+import Button from '@/components/ui/Button';
 import { getPostBySlug, getAllSlugs } from '@/lib/blog';
 import { buildBlogPostingJsonLd, buildBreadcrumbJsonLd } from '@/data/seo';
 
@@ -32,6 +34,15 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       publishedTime: post.date,
       authors: [post.author],
     },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt,
+      images: post.featuredImage ? [post.featuredImage] : [],
+    },
+    alternates: {
+      canonical: `${SITE_URL}/blog/${slug}`,
+    },
   };
 }
 
@@ -43,6 +54,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const seo = {
     title: `${post.title} | DoonPortal Blog`,
     description: post.excerpt,
+    canonical: `${SITE_URL}/blog/${slug}`,
     jsonLd: [
       buildBlogPostingJsonLd({
         title: post.title,
@@ -59,6 +71,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       ]),
     ],
   };
+
+  const htmlContent = markdownToHtml(post.content);
+  const headings = extractHeadings(post.content);
 
   return (
     <PageLayout seo={seo}>
@@ -100,7 +115,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="relative mx-auto aspect-video max-w-4xl overflow-hidden rounded-2xl bg-neutral-100">
                 <Image
                   src={post.featuredImage}
-                  alt={post.title}
+                  alt={`${post.title} - featured image`}
                   fill
                   className="object-cover"
                   priority
@@ -111,10 +126,64 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           )}
 
           <SectionWrapper>
-            <div
-              className="prose prose-lg prose-neutral mx-auto max-w-3xl prose-headings:font-bold prose-a:text-brand-600"
-              dangerouslySetInnerHTML={{ __html: markdownToHtml(post.content) }}
-            />
+            <div className="mx-auto max-w-3xl">
+              {/* Table of Contents */}
+              {headings.length > 2 && (
+                <nav className="mb-10 rounded-xl border border-neutral-200 bg-neutral-50 p-6" aria-label="Table of contents">
+                  <h2 className="mb-3 text-lg font-semibold text-neutral-900">Table of Contents</h2>
+                  <ul className="space-y-2">
+                    {headings.map((heading) => (
+                      <li key={heading.id} className={heading.level === 3 ? 'ml-4' : ''}>
+                        <a href={`#${heading.id}`} className="text-sm text-brand-600 hover:text-brand-800">
+                          {heading.text}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              )}
+
+              {/* Article content */}
+              <div
+                className="prose prose-lg prose-neutral prose-headings:font-bold prose-a:text-brand-600"
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
+              />
+
+              {/* CTA at bottom of blog post */}
+              <div className="mt-12 rounded-2xl border border-brand-200 bg-brand-50 p-8 text-center">
+                <h2 className="text-xl font-bold text-neutral-900">Ready to Get Started?</h2>
+                <p className="mt-2 text-neutral-600">
+                  See how DoonPortal can automate your operations with a free demo.
+                </p>
+                <div className="mt-6 flex flex-wrap justify-center gap-4">
+                  <Button href="/book-demo" variant="primary" size="md">
+                    Book Free Demo
+                  </Button>
+                  <Button href="/solutions" variant="outline" size="md">
+                    Explore Solutions
+                  </Button>
+                </div>
+              </div>
+
+              {/* Internal links */}
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href="/products/school-management" className="group text-sm text-brand-600 hover:text-brand-800">
+                  School Management{' '}
+                  <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
+                </Link>
+                <Link href="/products/inventory-pos" className="group text-sm text-brand-600 hover:text-brand-800">
+                  Inventory POS{' '}
+                  <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
+                </Link>
+                <Link href="/products/dairy-management" className="group text-sm text-brand-600 hover:text-brand-800">
+                  Dairy Management{' '}
+                  <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
+                </Link>
+                <Link href="/blog" className="text-sm text-brand-600 hover:text-brand-800">
+                  ← Back to Blog
+                </Link>
+              </div>
+            </div>
           </SectionWrapper>
         </article>
       </main>
@@ -122,26 +191,49 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   );
 }
 
-/** Simple markdown to HTML converter for blog content */
+/** Extract headings from markdown for table of contents */
+function extractHeadings(markdown: string): { id: string; text: string; level: number }[] {
+  const headings: { id: string; text: string; level: number }[] = [];
+  const lines = markdown.split('\n');
+  for (const line of lines) {
+    const match = line.match(/^(#{2,3})\s+(.+)$/);
+    if (match) {
+      const text = match[2].trim();
+      const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      headings.push({ id, text, level: match[1].length });
+    }
+  }
+  return headings;
+}
+
+/** Markdown to HTML converter with heading IDs for anchor links */
 function markdownToHtml(markdown: string): string {
   return markdown
-    // Headers
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
-    // Bold
+    .replace(/^### (.+)$/gm, (_match, text) => {
+      const id = text.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      return `<h3 id="${id}">${text}</h3>`;
+    })
+    .replace(/^## (.+)$/gm, (_match, text) => {
+      const id = text.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      return `<h2 id="${id}">${text}</h2>`;
+    })
+    .replace(/^# (.+)$/gm, (_match, text) => {
+      const id = text.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      return `<h2 id="${id}">${text}</h2>`;
+    })
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Italic
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Links
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
-    // Paragraphs (double newlines)
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
     .split(/\n\n+/)
     .map((block) => {
       const trimmed = block.trim();
       if (!trimmed) return '';
       if (trimmed.startsWith('<h') || trimmed.startsWith('<ul') || trimmed.startsWith('<ol')) {
         return trimmed;
+      }
+      if (trimmed.includes('<li>')) {
+        return `<ul>${trimmed}</ul>`;
       }
       return `<p>${trimmed}</p>`;
     })

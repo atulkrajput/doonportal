@@ -5,6 +5,9 @@
 /.next/
 /out/
 
+# kiro
+/.kiro/
+
 # production
 /build
 
@@ -27,6 +30,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# legacy site and docs (read-only)
-/docs
+# legacy site (read-only)
 /Old-Web
+
+# Document FOlder
+/docs
+
+# lead data (generated at runtime)
+/data/leads.json

@@ -3,12 +3,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import PageLayout from '@/components/layouts/PageLayout';
 import SectionWrapper from '@/components/ui/SectionWrapper';
+import AnimatedSection from '@/components/ui/AnimatedSection';
 import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
 import { getAllPosts } from '@/lib/blog';
 import { pageSEO } from '@/data/seo';
-
-const POSTS_PER_PAGE = 9;
 
 export async function generateMetadata(): Promise<Metadata> {
   const seo = pageSEO.blog;
@@ -24,20 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-interface BlogPageProps {
-  searchParams: Promise<{ page?: string }>;
-}
-
-export default async function BlogPage({ searchParams }: BlogPageProps) {
-  const params = await searchParams;
+export default function BlogPage() {
   const seo = pageSEO.blog;
-  const allPosts = getAllPosts();
-  const currentPage = Math.max(1, parseInt(params.page || '1', 10));
-  const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
-  const posts = allPosts.slice(
-    (currentPage - 1) * POSTS_PER_PAGE,
-    currentPage * POSTS_PER_PAGE
-  );
+  const posts = getAllPosts();
 
   return (
     <PageLayout seo={seo}>
@@ -54,69 +41,48 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
         </SectionWrapper>
 
         <SectionWrapper>
-          {posts.length === 0 ? (
-            <p className="text-center text-neutral-600">No blog posts yet. Check back soon!</p>
-          ) : (
-            <>
-              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                {posts.map((post) => (
-                  <Link key={post.slug} href={`/blog/${post.slug}`} className="block">
-                    <Card hover className="h-full">
-                      <div className="relative mb-4 aspect-video overflow-hidden rounded-lg bg-neutral-100">
-                        <Image
-                          src={post.featuredImage}
-                          alt={post.title}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        />
-                      </div>
-                      <time className="text-sm text-neutral-500" dateTime={post.date}>
-                        {new Date(post.date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </time>
-                      <h2 className="mt-2 text-xl font-semibold text-neutral-900">
-                        {post.title}
-                      </h2>
-                      <p className="mt-2 text-neutral-600">{post.excerpt}</p>
-                      <span className="mt-4 inline-block text-sm font-medium text-brand-600">
-                        Read more →
-                      </span>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <nav className="mt-12 flex items-center justify-center gap-2" aria-label="Blog pagination">
-                  {currentPage > 1 && (
-                    <Button href={`/blog?page=${currentPage - 1}`} variant="outline" size="sm">
-                      Previous
-                    </Button>
-                  )}
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                      key={page}
-                      href={`/blog?page=${page}`}
-                      variant={page === currentPage ? 'primary' : 'outline'}
-                      size="sm"
-                    >
-                      {page}
-                    </Button>
+          <AnimatedSection variant="fade-in-up">
+            {posts.length === 0 ? (
+              <p className="text-center text-neutral-600">No blog posts yet. Check back soon!</p>
+            ) : (
+              <>
+                <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                  {posts.map((post) => (
+                    <Link key={post.slug} href={`/blog/${post.slug}`} className="group block">
+                      <Card hover className="h-full">
+                        <div className="relative mb-4 aspect-video overflow-hidden rounded-lg bg-neutral-100">
+                          <Image
+                            src={post.featuredImage}
+                            alt={post.title}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            loading="lazy"
+                          />
+                        </div>
+                        <time className="text-sm text-neutral-500" dateTime={post.date}>
+                          {new Date(post.date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
+                        </time>
+                        <h2 className="mt-2 text-xl font-semibold text-neutral-900">
+                          {post.title}
+                        </h2>
+                        <p className="mt-2 text-neutral-600">{post.excerpt}</p>
+                        <span className="mt-4 inline-block text-sm font-medium text-brand-600">
+                          Read more{' '}
+                          <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
+                        </span>
+                      </Card>
+                    </Link>
                   ))}
-                  {currentPage < totalPages && (
-                    <Button href={`/blog?page=${currentPage + 1}`} variant="outline" size="sm">
-                      Next
-                    </Button>
-                  )}
-                </nav>
-              )}
-            </>
-          )}
+                </div>
+
+              </>
+            )}
+          </AnimatedSection>
         </SectionWrapper>
       </main>
     </PageLayout>

@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { demoFormSchema, type DemoFormSchema } from '@/lib/validation';
+import { trackFormSubmission, trackDemoRequest } from '@/lib/analytics';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
@@ -12,6 +14,7 @@ interface DemoFormProps {
 }
 
 export default function DemoForm({ productContext }: DemoFormProps) {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -49,6 +52,9 @@ export default function DemoForm({ productContext }: DemoFormProps) {
       }
 
       setIsSuccess(true);
+      trackFormSubmission('demo', productContext);
+      trackDemoRequest(productContext);
+      router.push('/thank-you');
     } catch (error) {
       setServerError(
         error instanceof Error ? error.message : 'Network error. Please check your connection.'

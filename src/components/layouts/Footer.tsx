@@ -11,7 +11,9 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-neutral-200 bg-neutral-50" role="contentinfo">
+    <footer className="relative bg-gradient-to-b from-neutral-900 to-neutral-950" role="contentinfo">
+      {/* Gradient top separator */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-500 to-transparent" />
       <div className="mx-auto max-w-8xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
           {/* Company info */}
@@ -22,10 +24,11 @@ export default function Footer() {
                 alt={logo.alt}
                 width={40}
                 height={40}
-                className="h-8 w-8"
+                className="h-8 w-8 brightness-0 invert"
+                loading="lazy"
               />
             </Link>
-            <p className="mt-4 max-w-sm text-body-sm text-neutral-600">
+            <p className="mt-4 max-w-sm text-body-sm text-neutral-400">
               DoonPortal builds automation platforms for schools, retail
               businesses, and dairy farms. 15+ years of expertise in
               industry-specific software solutions.
@@ -39,7 +42,7 @@ export default function Footer() {
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-neutral-200 text-neutral-600 transition-colors hover:bg-brand-100 hover:text-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-neutral-800 text-neutral-400 transition-all duration-200 hover:scale-110 hover:-translate-y-0.5 hover:text-brand-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
                   aria-label={`Follow DoonPortal on ${social.platform}`}
                 >
                   <SocialIcon name={social.icon} />
@@ -51,7 +54,7 @@ export default function Footer() {
           {/* Link groups */}
           {footerLinkGroups.map((group) => (
             <div key={group.title}>
-              <h3 className="text-body-sm font-semibold text-neutral-900">
+              <h3 className="text-body-sm font-semibold text-neutral-200">
                 {group.title}
               </h3>
               <ul className="mt-3 space-y-2" role="list">
@@ -59,7 +62,7 @@ export default function Footer() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-body-sm text-neutral-600 transition-colors hover:text-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                      className="relative text-body-sm text-neutral-400 transition-colors hover:text-brand-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-brand-400 after:transition-all after:duration-200 hover:after:w-full"
                     >
                       {link.label}
                     </Link>
@@ -71,17 +74,17 @@ export default function Footer() {
         </div>
 
         {/* Contact info + copyright */}
-        <div className="mt-10 border-t border-neutral-200 pt-8">
+        <div className="mt-10 border-t border-neutral-800 pt-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-body-sm text-neutral-500">
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-body-sm text-neutral-400">
               <a
                 href={`mailto:${contactInfo.email}`}
-                className="transition-colors hover:text-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                className="relative transition-colors hover:text-brand-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-brand-400 after:transition-all after:duration-200 hover:after:w-full"
               >
                 {contactInfo.email}
               </a>
             </div>
-            <p className="text-body-sm text-neutral-400">
+            <p className="text-body-sm text-neutral-500">
               &copy; {currentYear} DoonPortal. All rights reserved.
             </p>
           </div>

@@ -15,7 +15,7 @@ export default function Navbar() {
   const hamburgerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
+    const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
@@ -81,7 +81,7 @@ export default function Navbar() {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-nav'
+          ? 'bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-nav'
           : 'bg-transparent'
       }`}
       role="navigation"
@@ -219,7 +219,7 @@ function NavItem({ link }: { link: NavLink }) {
     return (
       <Link
         href={link.href}
-        className="rounded-md px-3 py-2 text-body-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+        className="relative rounded-md px-3 py-2 text-body-sm font-medium text-neutral-700 transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-brand-500 after:transition-all after:duration-200 hover:after:w-full"
       >
         {link.label}
       </Link>
@@ -234,7 +234,7 @@ function NavItem({ link }: { link: NavLink }) {
     >
       <Link
         href={link.href}
-        className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-body-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+        className="relative inline-flex items-center gap-1 rounded-md px-3 py-2 text-body-sm font-medium text-neutral-700 transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-brand-500 after:transition-all after:duration-200 hover:after:w-full"
         aria-expanded={open}
         aria-haspopup="true"
         onFocus={() => setOpen(true)}
@@ -262,7 +262,7 @@ function NavItem({ link }: { link: NavLink }) {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.2 }}
             className="absolute left-0 top-full mt-1 w-56 rounded-lg bg-white py-2 shadow-card"
             onBlur={(e: React.FocusEvent) => {
               if (!e.currentTarget.contains(e.relatedTarget)) {

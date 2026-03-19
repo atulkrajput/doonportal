@@ -7,13 +7,15 @@ export const pageSEO: Record<string, SEOMetadata> = {
   home: {
     title: 'DoonPortal — Automation Software for Schools, Retail & Dairy',
     description:
-      'DoonPortal builds industry-specific automation software for schools, retail businesses, and dairy farms. 15+ years of expertise in business automation solutions.',
+      'Automation software for schools and businesses. Manage operations with School ERP, Inventory POS, and Dairy Management systems. 15+ years of expertise.',
     keywords: [
       'business automation software',
       'school management software',
+      'school ERP software',
       'inventory POS software',
       'dairy management software',
       'automation solutions India',
+      'school management system India',
     ],
     ogImage: '/images/og/home.png',
     canonical: SITE_URL,
@@ -29,6 +31,7 @@ export const pageSEO: Record<string, SEOMetadata> = {
         address: {
           '@type': 'PostalAddress',
           addressLocality: 'Dehradun',
+          addressRegion: 'Uttarakhand',
           addressCountry: 'IN',
         },
         contactPoint: {
@@ -36,6 +39,11 @@ export const pageSEO: Record<string, SEOMetadata> = {
           email: 'info@doonportal.com',
           contactType: 'sales',
         },
+        sameAs: [
+          'https://linkedin.com/company/doonportal',
+          'https://twitter.com/doonportal',
+          'https://facebook.com/doonportal',
+        ],
       },
     ],
   },
@@ -169,6 +177,11 @@ export const pageSEO: Record<string, SEOMetadata> = {
       ]),
     ],
   },
+  thankYou: {
+    title: 'Thank You — DoonPortal',
+    description: 'Thank you for your interest in DoonPortal. Our team will get back to you shortly.',
+    canonical: `${SITE_URL}/thank-you`,
+  },
 };
 
 // JSON-LD Template Builders
@@ -208,6 +221,38 @@ export function buildProductJsonLd(product: {
   };
 }
 
+export function buildSoftwareApplicationJsonLd(app: {
+  name: string;
+  description: string;
+  url: string;
+  image?: string;
+  category: string;
+  operatingSystem?: string;
+}): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: app.name,
+    description: app.description,
+    url: app.url,
+    image: app.image,
+    applicationCategory: app.category,
+    operatingSystem: app.operatingSystem || 'Web',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'INR',
+      availability: 'https://schema.org/InStock',
+      description: 'Contact for pricing',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+  };
+}
+
 export function buildBlogPostingJsonLd(post: {
   title: string;
   description: string;
@@ -228,6 +273,37 @@ export function buildBlogPostingJsonLd(post: {
       name: post.author,
     },
     image: post.image,
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/doonportal.png`,
+      },
+    },
+  };
+}
+
+export function buildTechArticleJsonLd(article: {
+  title: string;
+  description: string;
+  url: string;
+  datePublished: string;
+  author: string;
+  image?: string;
+}): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: article.title,
+    description: article.description,
+    url: article.url,
+    datePublished: article.datePublished,
+    author: {
+      '@type': 'Person',
+      name: article.author,
+    },
+    image: article.image,
     publisher: {
       '@type': 'Organization',
       name: SITE_NAME,

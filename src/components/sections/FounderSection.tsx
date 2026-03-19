@@ -39,6 +39,7 @@ export default function FounderSection({
             width={400}
             height={400}
             className="rounded-2xl object-cover"
+            loading="lazy"
           />
         </motion.div>
 

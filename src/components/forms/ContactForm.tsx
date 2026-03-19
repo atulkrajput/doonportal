@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { contactFormSchema, type ContactFormSchema } from '@/lib/validation';
+import { trackFormSubmission } from '@/lib/analytics';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
@@ -43,6 +44,7 @@ export default function ContactForm() {
       }
 
       setIsSuccess(true);
+      trackFormSubmission('contact');
     } catch (error) {
       setServerError(
         error instanceof Error ? error.message : 'Network error. Please check your connection.'

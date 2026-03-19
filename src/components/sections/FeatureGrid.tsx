@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, Variants } from 'framer-motion';
 import { useRef } from 'react';
 import type { Feature } from '@/types';
 import SectionWrapper from '@/components/ui/SectionWrapper';
@@ -11,6 +11,8 @@ interface FeatureGridProps {
   columns?: 2 | 3 | 4;
   title?: string;
   subtitle?: string;
+  hoverHighlight?: boolean;
+  staggerDelay?: number;
 }
 
 const columnClasses: Record<number, string> = {
@@ -19,14 +21,47 @@ const columnClasses: Record<number, string> = {
   4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
 };
 
+const containerVariants: Variants = {
+  hidden: {},
+  visible: (staggerDelay: number) => ({
+    transition: {
+      staggerChildren: staggerDelay,
+    },
+  }),
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: 'easeOut' },
+  },
+};
+
+const iconVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.5 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.4, ease: 'easeOut' },
+  },
+};
+
 export default function FeatureGrid({
   features,
   columns = 3,
   title,
   subtitle,
+  hoverHighlight = false,
+  staggerDelay = 0.1,
 }: FeatureGridProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
+
+  const hoverClasses = hoverHighlight
+    ? 'hover:shadow-elevated hover:bg-brand-50 transition-all duration-200'
+    : '';
 
   return (
     <SectionWrapper>
@@ -43,16 +78,20 @@ export default function FeatureGrid({
         </div>
       )}
 
-      <div ref={ref} className={`grid gap-6 ${columnClasses[columns]}`}>
-        {features.map((feature, index) => (
-          <motion.div
-            key={feature.title}
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
-          >
-            <Card className="h-full">
-              <div className="text-3xl">{feature.icon}</div>
+      <motion.div
+        ref={ref}
+        className={`grid gap-6 ${columnClasses[columns]}`}
+        variants={containerVariants}
+        custom={staggerDelay}
+        initial="hidden"
+        animate={isInView ? 'visible' : 'hidden'}
+      >
+        {features.map((feature) => (
+          <motion.div key={feature.title} variants={itemVariants}>
+            <Card className={`h-full ${hoverClasses}`}>
+              <motion.div className="text-3xl hover:-translate-y-0.5 transition-transform duration-200" variants={iconVariants}>
+                {feature.icon}
+              </motion.div>
               <h3 className="mt-4 text-lg font-semibold text-neutral-900">
                 {feature.title}
               </h3>
@@ -60,7 +99,7 @@ export default function FeatureGrid({
             </Card>
           </motion.div>
         ))}
-      </div>
+      </motion.div>
     </SectionWrapper>
   );
 }

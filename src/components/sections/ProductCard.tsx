@@ -1,7 +1,5 @@
-'use client';
-
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import AnimatedCard from '@/components/ui/AnimatedCard';
 
 interface ProductCardProps {
   title: string;
@@ -19,15 +17,8 @@ export default function ProductCard({
   features,
 }: ProductCardProps) {
   return (
-    <Link href={href} className="block">
-      <motion.div
-        className="h-full rounded-2xl bg-white p-6 shadow-card"
-        whileHover={{
-          scale: 1.03,
-          boxShadow: '0 4px 8px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.12)',
-        }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      >
+    <Link href={href} className="group block">
+      <AnimatedCard hover className="h-full">
         <div className="text-4xl">{icon}</div>
         <h3 className="mt-4 text-xl font-semibold text-neutral-900">{title}</h3>
         <p className="mt-2 text-neutral-600">{description}</p>
@@ -44,9 +35,10 @@ export default function ProductCard({
         )}
 
         <span className="mt-4 inline-block text-sm font-medium text-brand-600">
-          Learn more →
+          Learn more{' '}
+          <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
         </span>
-      </motion.div>
+      </AnimatedCard>
     </Link>
   );
 }

@@ -5,6 +5,7 @@ import CTASection from '@/components/sections/CTASection';
 import PageLayout from '@/components/layouts/PageLayout';
 import SectionWrapper from '@/components/ui/SectionWrapper';
 import Card from '@/components/ui/Card';
+import AnimatedSection from '@/components/ui/AnimatedSection';
 import { heroContent, services, process as processSteps, ctaContent } from '@/data/custom-automation';
 import { pageSEO } from '@/data/seo';
 
@@ -36,37 +37,41 @@ export default function CustomAutomationPage() {
         />
 
         {/* Services */}
-        <FeatureGrid
-          features={services}
-          columns={3}
-          title="Our Services"
-          subtitle="End-to-end automation solutions tailored to your business."
-        />
+        <AnimatedSection variant="fade-in-up">
+          <FeatureGrid
+            features={services}
+            columns={3}
+            title="Our Services"
+            subtitle="End-to-end automation solutions tailored to your business."
+          />
+        </AnimatedSection>
 
         {/* Process / Workflow Section */}
-        <SectionWrapper className="bg-neutral-50">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
-              How We Work
-            </h2>
-            <p className="mt-4 text-lg text-neutral-600">
-              Our proven process ensures your project is delivered on time and on budget.
-            </p>
-          </div>
-          <div className="mx-auto max-w-3xl space-y-6">
-            {processSteps.map((step) => (
-              <Card key={step.step} className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-lg font-bold text-white">
-                  {step.step}
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-neutral-900">{step.title}</h3>
-                  <p className="mt-1 text-neutral-600">{step.description}</p>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </SectionWrapper>
+        <AnimatedSection variant="fade-in-up">
+          <SectionWrapper className="bg-neutral-50">
+            <div className="mb-12 text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+                How We Work
+              </h2>
+              <p className="mt-4 text-lg text-neutral-600">
+                Our proven process ensures your project is delivered on time and on budget.
+              </p>
+            </div>
+            <div className="mx-auto max-w-3xl space-y-6">
+              {processSteps.map((step) => (
+                <Card key={step.step} className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-lg font-bold text-white">
+                    {step.step}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-neutral-900">{step.title}</h3>
+                    <p className="mt-1 text-neutral-600">{step.description}</p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </SectionWrapper>
+        </AnimatedSection>
 
         {/* CTA Section */}
         <CTASection

@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 
-const WHATSAPP_NUMBER = '91XXXXXXXXXX'; // Replace with actual number
+const WHATSAPP_NUMBER = '917252811555';
 
 const pageMessages: Record<string, string> = {
   '/': 'Hi, I visited your website and I\'m interested in DoonPortal solutions.',
