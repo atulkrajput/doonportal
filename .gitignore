@@ -38,3 +38,5 @@ next-env.d.ts
 
 # lead data (generated at runtime)
 /data/leads.json
+
+/src/generated/prisma

@@ -54,3 +54,23 @@ export function trackDemoRequest(productInterest?: string) {
 export function trackCTAClick(ctaLabel: string, location: string) {
   trackEvent('cta_click', { cta_label: ctaLabel, location });
 }
+
+// Phase 4: Landing page variant tracking
+export function trackLandingPageView(variant: string, page: string) {
+  trackEvent('landing_page_view', { variant, page });
+}
+
+export function trackLandingPageConversion(variant: string, page: string, conversionType: string) {
+  trackEvent('landing_page_conversion', { variant, page, conversion_type: conversionType });
+}
+
+// Google Ads conversion tracking preparation
+export function trackGoogleAdsConversion(conversionLabel: string, value?: number) {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'conversion', {
+      send_to: conversionLabel,
+      value: value || 0,
+      currency: 'INR',
+    });
+  }
+}

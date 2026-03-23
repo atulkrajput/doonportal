@@ -40,10 +40,17 @@ export default function DemoForm({ productContext }: DemoFormProps) {
     setServerError(null);
 
     try {
+      // Map product context to product_interest for the CRM
+      let product_interest = 'general';
+      const ctx = (productContext || '').toLowerCase();
+      if (ctx.includes('school')) product_interest = 'school';
+      else if (ctx.includes('inventory') || ctx.includes('pos') || ctx.includes('retail')) product_interest = 'inventory';
+      else if (ctx.includes('dairy')) product_interest = 'dairy';
+
       const response = await fetch('/api/demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, product_interest }),
       });
 
       if (!response.ok) {

@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
-import Navbar from '@/components/layouts/Navbar';
-import Footer from '@/components/layouts/Footer';
-import WhatsAppFloat from '@/components/ui/WhatsAppFloat';
 import AnalyticsProvider from '@/components/analytics/AnalyticsProvider';
+import SiteShell from '@/components/layouts/SiteShell';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -83,10 +81,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased">
         <AnalyticsProvider />
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
-        <WhatsAppFloat />
+        <SiteShell>{children}</SiteShell>
       </body>
     </html>
   );
