@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   images: {
     unoptimized: true,
     formats: ["image/avif", "image/webp"],
@@ -9,6 +10,10 @@ const nextConfig = {
   },
   // Enable compression
   compress: true,
+  // Skip type checking during build (handled by IDE/CI separately)
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   // Power performance optimizations
   experimental: {
     optimizeCss: false,
