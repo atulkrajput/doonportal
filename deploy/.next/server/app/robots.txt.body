@@ -1,9 +1,0 @@
-User-Agent: *
-Allow: /
-Disallow: /api/
-Disallow: /admin/
-Disallow: /private/
-Disallow: /test/
-Disallow: /_next/
-
-Sitemap: https://doonportal.com/sitemap.xml
