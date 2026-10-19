@@ -139,9 +139,9 @@ class DiscoveryQuery
 
         [$from, $to] = $this->dateWindow($f);
         if ($from) {
-            // Overlaps the window: ends after it starts (or starts in it when there is no end).
-            $query->where(fn ($q) => $q->where('ends_at', '>=', $from)
-                ->orWhere(fn ($q) => $q->whereNull('ends_at')->where('starts_at', '>=', $from)));
+            // Overlaps the window: still running at its start, using the same assumed
+            // duration for open-ended events as the default listing and Event::phase().
+            $query->upcomingOrLive($from);
         } elseif (empty($f['include_past'])) {
             $query->upcomingOrLive();
         }

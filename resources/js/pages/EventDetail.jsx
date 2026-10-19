@@ -35,10 +35,10 @@ function EventView({ event }) {
                     )}
                     {event.is_rescheduled && !event.is_cancelled && (
                         <div className="mt-3 rounded-xl border border-accent-400 bg-accent-100 p-3 text-sm">
-                            <strong>Rescheduled</strong> from {formatEventDate(event.original_starts_at, event.timezone)}.
+                            <strong>Rescheduled</strong> from {formatEventDate(event.original_starts_at, event.timezone, !event.is_all_day)}.
                         </div>
                     )}
-                    <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-accent-500">{formatEventDate(event.starts_at, event.timezone)}</p>
+                    <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-accent-500">{formatEventDate(event.starts_at, event.timezone, !event.is_all_day)}</p>
                     <h1 className="mt-1 font-display text-3xl font-bold sm:text-4xl">{event.title}</h1>
                     {event.summary && <p className="mt-1 text-stone-600">{event.summary}</p>}
                     <div className="mt-5 flex flex-wrap gap-2">
@@ -75,8 +75,8 @@ function EventView({ event }) {
                         <h2 className="font-semibold">Event details</h2>
                         <div className="mt-2 divide-y divide-stone-100">
                             <InfoRow icon={<Icon name="calendar" size={18} />}>
-                                {formatEventDate(event.starts_at, event.timezone)}
-                                {event.ends_at && <> – {formatEventDate(event.ends_at, event.timezone)}</>}
+                                {formatEventDate(event.starts_at, event.timezone, !event.is_all_day)}
+                                {event.ends_at && <> – {formatEventDate(event.ends_at, event.timezone, !event.is_all_day)}</>}
                                 <span className="block text-xs text-stone-500">Times in {event.timezone === 'Asia/Kolkata' ? 'IST' : event.timezone}</span>
                             </InfoRow>
                             {(event.venue || event.area) && (

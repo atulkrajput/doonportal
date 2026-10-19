@@ -85,7 +85,7 @@ export function EventCard({ event }) {
                     {event.phase === 'LIVE' && <span className="rounded-full bg-navy-100 px-2 py-0.5 text-xs font-semibold text-navy-700">Happening now</span>}
                     <DemoBadge show={event.is_demo} />
                 </div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-accent-500">{formatEventDate(event.starts_at, event.timezone)}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-accent-500">{formatEventDate(event.starts_at, event.timezone, !event.is_all_day)}</p>
                 <h3 className={`font-semibold leading-snug group-hover:text-navy-700 ${event.is_cancelled ? 'line-through decoration-stone-400' : ''}`}>{event.title}</h3>
                 <p className="mt-auto pt-2 text-sm text-stone-600">{[event.venue?.name || event.area?.name, price].filter(Boolean).join(' · ')}</p>
             </div>

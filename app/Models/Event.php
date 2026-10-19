@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\EventStatus;
 use App\Models\Concerns\HasUniqueSlug;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,12 @@ use Illuminate\Support\Carbon;
 class Event extends Model
 {
     use HasFactory, HasUlids, HasUniqueSlug, SoftDeletes;
+
+    /** How long an event without an end time is assumed to run. */
+    public const DEFAULT_DURATION_HOURS = 6;
+
+    /** All-day events start at local midnight; without an end they run for the whole day. */
+    public const ALL_DAY_DURATION_HOURS = 24;
 
     /**
      * status and published_at change only through StatusTransitionService.
@@ -62,14 +69,18 @@ class Event extends Model
     }
 
     /**
-     * Not yet finished: ends in the future, or (without an end) started within the last 6 hours.
+     * Not yet finished: ends in the future, or (without an end) started within its
+     * assumed duration — the whole day for all-day events, 6 hours otherwise.
      */
-    public function scopeUpcomingOrLive(Builder $query, ?Carbon $now = null): void
+    public function scopeUpcomingOrLive(Builder $query, ?CarbonInterface $now = null): void
     {
-        $now ??= now();
+        $now = Carbon::instance($now ?? now());
         $query->where(fn ($q) => $q
             ->where('ends_at', '>=', $now)
-            ->orWhere(fn ($q) => $q->whereNull('ends_at')->where('starts_at', '>=', $now->copy()->subHours(6))));
+            ->orWhere(fn ($q) => $q->whereNull('ends_at')->where('is_all_day', false)
+                ->where('starts_at', '>=', $now->copy()->subHours(self::DEFAULT_DURATION_HOURS)))
+            ->orWhere(fn ($q) => $q->whereNull('ends_at')->where('is_all_day', true)
+                ->where('starts_at', '>=', $now->copy()->subHours(self::ALL_DAY_DURATION_HOURS))));
     }
 
     public function isPublic(): bool
@@ -92,7 +103,9 @@ class Event extends Model
         }
 
         $now ??= now();
-        $end = $this->ends_at ?? $this->starts_at?->copy()->addHours(6);
+        $end = $this->ends_at ?? $this->starts_at?->copy()->addHours(
+            $this->is_all_day ? self::ALL_DAY_DURATION_HOURS : self::DEFAULT_DURATION_HOURS
+        );
 
         return match (true) {
             $this->starts_at === null => 'UPCOMING',

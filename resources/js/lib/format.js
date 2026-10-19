@@ -49,8 +49,14 @@ export function telHref(phone) {
     return phone ? `tel:${phone.replace(/[^\d+]/g, '')}` : null;
 }
 
+/** wa.me needs the country code: bare 10-digit (or 0-prefixed) Indian numbers get +91. */
 export function whatsappHref(number) {
-    return number ? `https://wa.me/${number.replace(/\D/g, '')}` : null;
+    if (!number) {
+        return null;
+    }
+    const digits = number.replace(/\D/g, '');
+    const national = digits.length === 11 && digits.startsWith('0') ? digits.slice(1) : digits;
+    return `https://wa.me/${national.length === 10 && !number.trim().startsWith('+') ? `91${national}` : digits}`;
 }
 
 export function directionsHref(location, label) {

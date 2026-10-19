@@ -19,8 +19,9 @@ class AnalyticsController extends Controller
         $data = $request->validated();
 
         if (isset($data['entity_type'])) {
-            $class = EntityType::from($data['entity_type'])->modelClass();
-            abort_unless($class::query()->whereKey($data['entity_id'])->exists(), 422, 'Unknown entity.');
+            // Only public records: a different answer for hidden ones would reveal that they exist.
+            $entity = EntityType::from($data['entity_type'])->modelClass()::query()->find($data['entity_id']);
+            abort_unless($entity !== null && $entity->isPublic(), 422, 'Unknown entity.');
         }
 
         AnalyticsEvent::create([
