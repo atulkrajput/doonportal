@@ -57,7 +57,7 @@ function Message({ message }) {
         return null;
     }
     return (
-        <p role={message.type === 'error' ? 'alert' : 'status'} className={`rounded-xl p-3 text-sm ${message.type === 'error' ? 'bg-red-50 text-red-800' : 'bg-forest-50 text-forest-700'}`}>
+        <p role={message.type === 'error' ? 'alert' : 'status'} className={`rounded-xl p-3 text-sm ${message.type === 'error' ? 'bg-red-50 text-red-800' : 'bg-navy-50 text-navy-700'}`}>
             {message.text}
         </p>
     );
@@ -77,7 +77,7 @@ export function Login() {
     });
 
     return (
-        <AuthCard title="Sign in" footer={<>New here? <Link to="/register" className="font-semibold text-forest-700">Create an account</Link></>}>
+        <AuthCard title="Sign in" footer={<>New here? <Link to="/register" className="font-semibold text-navy-700">Create an account</Link></>}>
             <form onSubmit={form.onSubmit} className="space-y-4" noValidate>
                 <Message message={form.message} />
                 <Field label="Email" name="email" type="email" autoComplete="email" required errors={form.errors} />
@@ -85,7 +85,7 @@ export function Login() {
                 <button type="submit" className="btn-primary w-full" disabled={form.busy}>
                     {form.busy ? 'Signing in…' : 'Sign in'}
                 </button>
-                <Link to="/forgot-password" className="block text-center text-sm text-stone-600 hover:text-forest-700">
+                <Link to="/forgot-password" className="block text-center text-sm text-stone-600 hover:text-navy-700">
                     Forgot your password?
                 </Link>
             </form>
@@ -103,7 +103,7 @@ export function Register() {
     });
 
     return (
-        <AuthCard title="Join DoonPortal" footer={<>Already a member? <Link to="/login" className="font-semibold text-forest-700">Sign in</Link></>}>
+        <AuthCard title="Join DoonPortal" footer={<>Already a member? <Link to="/login" className="font-semibold text-navy-700">Sign in</Link></>}>
             <form onSubmit={form.onSubmit} className="space-y-4" noValidate>
                 <Message message={form.message} />
                 <Field label="Name" name="name" autoComplete="name" required errors={form.errors} />
@@ -126,7 +126,7 @@ export function ForgotPassword() {
     });
 
     return (
-        <AuthCard title="Reset your password" footer={<Link to="/login" className="font-semibold text-forest-700">Back to sign in</Link>}>
+        <AuthCard title="Reset your password" footer={<Link to="/login" className="font-semibold text-navy-700">Back to sign in</Link>}>
             <form onSubmit={form.onSubmit} className="space-y-4" noValidate>
                 <Message message={form.message} />
                 <Field label="Email" name="email" type="email" autoComplete="email" required errors={form.errors} />

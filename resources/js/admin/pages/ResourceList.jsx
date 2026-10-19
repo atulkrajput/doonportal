@@ -20,7 +20,7 @@ function Cell({ column, record }) {
         return <StatusBadge status={value} />;
     }
     if (column.boolean) {
-        return value ? <span className="text-forest-700">Yes</span> : <span className="text-stone-400">No</span>;
+        return value ? <span className="text-navy-700">Yes</span> : <span className="text-stone-400">No</span>;
     }
     if (column.datetime) {
         return <span className="whitespace-nowrap">{formatDateTime(value)}</span>;
@@ -159,13 +159,13 @@ export default function ResourceList({ resourceKey, resource }) {
                                         {resource.columns.map((c) => (
                                             <td key={c.key} className="px-3 py-2 align-top">
                                                 {c.primary ? (
-                                                    <Link to={`/admin/${resourceKey}/${record.id}`} className="font-semibold text-forest-700 hover:underline">
+                                                    <Link to={`/admin/${resourceKey}/${record.id}`} className="font-semibold text-navy-700 hover:underline">
                                                         {get(record, c.key) || '(untitled)'}
                                                     </Link>
                                                 ) : (
                                                     <Cell column={c} record={record} />
                                                 )}
-                                                {c.primary && record.is_demo && <span className="ml-2 rounded bg-saffron-100 px-1.5 text-xs text-amber-800">Demo</span>}
+                                                {c.primary && record.is_demo && <span className="ml-2 rounded bg-accent-100 px-1.5 text-xs text-amber-800">Demo</span>}
                                                 {c.primary && record.is_trashed && <span className="ml-2 rounded bg-red-100 px-1.5 text-xs text-red-800">Deleted</span>}
                                             </td>
                                         ))}

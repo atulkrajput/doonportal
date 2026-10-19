@@ -81,7 +81,7 @@ function Reviews({ slug }) {
                 <li key={r.id} className="rounded-2xl border border-stone-200 bg-white p-4">
                     <div className="flex items-center justify-between">
                         <p className="font-semibold">{r.author?.name ?? 'Member'}</p>
-                        <span className="text-sm text-saffron-500" aria-label={`${r.rating} out of 5`}>
+                        <span className="text-sm text-accent-500" aria-label={`${r.rating} out of 5`}>
                             {'★'.repeat(r.rating)}
                             <span className="text-stone-300">{'★'.repeat(5 - r.rating)}</span>
                         </span>
@@ -146,12 +146,12 @@ function BusinessView({ business }) {
                     <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-stone-600">
                         <Rating rating={business.rating} />
                         {business.categories?.map((c) => (
-                            <Link key={c.id} to={`/businesses/${c.slug}`} className="hover:text-forest-700">
+                            <Link key={c.id} to={`/businesses/${c.slug}`} className="hover:text-navy-700">
                                 {c.name}
                             </Link>
                         ))}
                         {business.area && (
-                            <Link to={`/area/${business.area.slug}`} className="hover:text-forest-700">
+                            <Link to={`/area/${business.area.slug}`} className="hover:text-navy-700">
                                 {business.area.name}
                             </Link>
                         )}
@@ -175,7 +175,7 @@ function BusinessView({ business }) {
                                 <h2 className="font-display text-xl font-bold">Offers</h2>
                                 <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                                     {offers.data.map((o) => (
-                                        <li key={o.id} className="rounded-2xl border border-saffron-400 bg-saffron-100 p-4">
+                                        <li key={o.id} className="rounded-2xl border border-accent-400 bg-accent-100 p-4">
                                             <p className="font-semibold">{o.title}</p>
                                             {o.discount_label && <p className="text-sm font-semibold text-amber-900">{o.discount_label}</p>}
                                             {o.description && <p className="mt-1 text-sm">{o.description}</p>}
@@ -231,7 +231,7 @@ function BusinessView({ business }) {
                                 {business.contact.phone && <InfoRow icon={<Icon name="phone" size={18} />}>{business.contact.phone}</InfoRow>}
                                 {business.contact.website && (
                                     <InfoRow icon={<Icon name="globe" size={18} />}>
-                                        <a href={business.contact.website} target="_blank" rel="noopener noreferrer nofollow" className="break-all text-forest-700 underline">
+                                        <a href={business.contact.website} target="_blank" rel="noopener noreferrer nofollow" className="break-all text-navy-700 underline">
                                             {business.contact.website.replace(/^https?:\/\//, '')}
                                         </a>
                                     </InfoRow>
@@ -241,7 +241,7 @@ function BusinessView({ business }) {
                                 )}
                                 {business.social_links?.map((l) => (
                                     <InfoRow key={l.platform} icon={<Icon name="globe" size={18} />}>
-                                        <a href={l.url} target="_blank" rel="noopener noreferrer nofollow" className="capitalize text-forest-700 underline">
+                                        <a href={l.url} target="_blank" rel="noopener noreferrer nofollow" className="capitalize text-navy-700 underline">
                                             {l.platform}
                                         </a>
                                     </InfoRow>
@@ -260,7 +260,7 @@ function BusinessView({ business }) {
                             {!business.is_claimed && (
                                 <p>
                                     Own this business?{' '}
-                                    <Link to="/business-portal" className="font-semibold text-forest-700 underline">
+                                    <Link to="/business-portal" className="font-semibold text-navy-700 underline">
                                         Claim this listing
                                     </Link>
                                 </p>

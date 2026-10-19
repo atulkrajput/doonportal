@@ -16,7 +16,7 @@ export default function SearchBox({ initial = '', large = false, autoFocus = fal
     };
 
     return (
-        <form onSubmit={submit} role="search" className={`flex w-full items-center gap-2 rounded-full border border-stone-300 bg-white shadow-sm focus-within:border-forest-500 ${large ? 'p-2 pl-5' : 'p-1 pl-4'}`}>
+        <form onSubmit={submit} role="search" className={`flex w-full items-center gap-2 rounded-full border border-stone-300 bg-white shadow-sm focus-within:border-navy-500 ${large ? 'p-2 pl-5' : 'p-1 pl-4'}`}>
             <Icon name="search" className="shrink-0 text-stone-400" />
             <label htmlFor={inputId} className="sr-only">
                 Search businesses, places, events and stories

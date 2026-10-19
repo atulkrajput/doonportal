@@ -50,7 +50,7 @@ export default function Search() {
                                 <div className="mb-3 flex items-end justify-between">
                                     <h2 className="font-display text-xl font-bold">{label}</h2>
                                     {moreLink && (
-                                        <Link to={moreLink(q)} className="text-sm font-semibold text-forest-700 hover:underline">
+                                        <Link to={moreLink(q)} className="text-sm font-semibold text-navy-700 hover:underline">
                                             More {label.toLowerCase()} →
                                         </Link>
                                     )}

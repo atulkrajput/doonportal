@@ -52,7 +52,7 @@ export function BusinessPortal() {
                         <p className="mt-2 text-stone-600">{text}</p>
                     </div>
                 ))}
-                <div className="rounded-2xl bg-saffron-100 p-6 md:col-span-3">
+                <div className="rounded-2xl bg-accent-100 p-6 md:col-span-3">
                     <p className="font-semibold">The business portal is being built.</p>
                     <p className="mt-1 text-stone-700">Listing submissions and ownership claims open in an upcoming release. Create an account now and you’ll be ready.</p>
                     <Link to="/register" className="btn-primary mt-4">

@@ -32,6 +32,9 @@ const paths = {
     store: 'M4 9l1-5h14l1 5M4 9h16v11H4zM9 20v-6h6v6',
     arrow: 'M5 12h14M13 6l6 6-6 6',
     user: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0',
+    utensils: 'M7 3v8M5 3v5a2 2 0 004 0V3M7 11v10M16 3c-2 1.5-2.5 4-2.5 7h2.5v11',
+    bag: 'M5 8h14l-1 13H6zM9 8V6a3 3 0 016 0v2',
+    users: 'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20a6.5 6.5 0 0113 0M16 4.5a3.5 3.5 0 010 6.5M18 14a6 6 0 013.5 6',
 };
 
 export function Icon({ name, className = '', size = 20, label }) {

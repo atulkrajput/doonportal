@@ -70,12 +70,12 @@ export const TRANSITIONS = {
 };
 
 const STATUS_TONES = {
-    PUBLISHED: 'bg-forest-100 text-forest-700',
-    VERIFIED: 'bg-forest-100 text-forest-700',
-    CLAIMED: 'bg-forest-100 text-forest-700',
-    REVIEW: 'bg-saffron-100 text-amber-800',
-    UNDER_REVIEW: 'bg-saffron-100 text-amber-800',
-    SUBMITTED: 'bg-saffron-100 text-amber-800',
+    PUBLISHED: 'bg-navy-100 text-navy-700',
+    VERIFIED: 'bg-navy-100 text-navy-700',
+    CLAIMED: 'bg-navy-100 text-navy-700',
+    REVIEW: 'bg-accent-100 text-amber-800',
+    UNDER_REVIEW: 'bg-accent-100 text-amber-800',
+    SUBMITTED: 'bg-accent-100 text-amber-800',
     CANCELLED: 'bg-red-100 text-red-800',
     SUSPENDED: 'bg-red-100 text-red-800',
     CLOSED: 'bg-stone-200 text-stone-700',

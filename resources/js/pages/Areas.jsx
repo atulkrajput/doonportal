@@ -22,9 +22,9 @@ export function AreaList() {
                 {data && (
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {data.data.map((a) => (
-                            <Link key={a.id} to={`/area/${a.slug}`} className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white p-5 hover:border-forest-500">
+                            <Link key={a.id} to={`/area/${a.slug}`} className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white p-5 hover:border-navy-500">
                                 <span className="flex items-center gap-2 font-semibold">
-                                    <Icon name="pin" className="text-forest-600" /> {a.name}
+                                    <Icon name="pin" className="text-navy-600" /> {a.name}
                                 </span>
                                 <span className="text-sm text-stone-500">
                                     {a.counts?.businesses ?? 0} listings · {a.counts?.places ?? 0} places

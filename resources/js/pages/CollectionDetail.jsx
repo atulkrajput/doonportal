@@ -27,7 +27,7 @@ function CollectionView({ collection }) {
                     <ol className="space-y-3">
                         {collection.items.map((item, i) => (
                             <li key={`${item.entity.type}-${item.entity.id}`} className="flex gap-3">
-                                <span className="mt-6 w-6 shrink-0 text-right font-display text-xl font-bold text-forest-600">{i + 1}</span>
+                                <span className="mt-6 w-6 shrink-0 text-right font-display text-xl font-bold text-navy-600">{i + 1}</span>
                                 <div className="min-w-0 flex-1">
                                     <EntityCard card={item.entity} />
                                     {item.note && <p className="mt-1 pl-1 text-sm italic text-stone-600">{item.note}</p>}

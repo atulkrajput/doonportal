@@ -4,21 +4,24 @@
 @source '../js/**/*.{js,jsx}';
 
 @theme {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-    --font-display: 'Fraunces', ui-serif, Georgia, serif;
+    /* Brand: "All things Doon" poster — deep navy, sunset orange, warm paper. */
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-display: 'Oswald', 'Arial Narrow', ui-sans-serif, sans-serif;
+    --font-script: 'Caveat', 'Segoe Script', cursive;
 
-    --color-forest-50: #f1f7f3;
-    --color-forest-100: #dcebe1;
-    --color-forest-200: #b9d6c3;
-    --color-forest-500: #2f7a55;
-    --color-forest-600: #22613f;
-    --color-forest-700: #1b4d33;
-    --color-forest-900: #0f2b1d;
-    --color-saffron-100: #fdf0d9;
-    --color-saffron-400: #f0b54a;
-    --color-saffron-500: #e39a1f;
-    --color-cream: #faf7f0;
-    --color-ink: #1c1917;
+    --color-navy-50: #eef2f9;
+    --color-navy-100: #dbe3f1;
+    --color-navy-200: #b6c5e1;
+    --color-navy-500: #34548f;
+    --color-navy-600: #233f74;
+    --color-navy-700: #1b3461;
+    --color-navy-900: #11244a;
+    --color-accent-100: #fdeedd;
+    --color-accent-400: #f6a057;
+    --color-accent-500: #f07c1e;
+    --color-accent-600: #d4660c;
+    --color-cream: #f7f4ee;
+    --color-ink: #16213a;
 }
 
 @layer base {
@@ -28,10 +31,20 @@
 
     body {
         @apply bg-cream text-ink antialiased;
+        /* Soft paper grain, as on the printed poster. */
+        background-image:
+            radial-gradient(circle at 12% 8%, rgb(255 255 255 / 0.7), transparent 40%),
+            radial-gradient(circle at 88% 30%, rgb(240 124 30 / 0.04), transparent 35%),
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0 0.2 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    h1,
+    h2 {
+        @apply tracking-tight;
     }
 
     :focus-visible {
-        @apply outline-2 outline-offset-2 outline-forest-500;
+        @apply outline-2 outline-offset-2 outline-navy-500;
     }
 }
 
@@ -46,23 +59,47 @@
     }
 
     .btn-primary {
-        @apply bg-forest-600 text-white hover:bg-forest-700;
+        @apply bg-navy-600 text-white hover:bg-navy-700;
     }
 
     .btn-secondary {
-        @apply border border-stone-300 bg-white text-ink hover:border-forest-500 hover:text-forest-700;
+        @apply border border-stone-300 bg-white text-ink hover:border-navy-500 hover:text-navy-700;
+    }
+
+    .btn-accent {
+        @apply inline-flex items-center justify-center gap-2 rounded-full bg-accent-500 px-4 py-2 text-sm font-semibold text-navy-900 transition-colors hover:bg-accent-400 disabled:opacity-50;
+    }
+
+    /* Round icon badges from the poster, alternating navy and orange. */
+    .icon-badge {
+        @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-navy-700 text-white shadow-sm;
+    }
+
+    .icon-badge-accent {
+        @apply bg-accent-500 text-white;
+    }
+
+    /* Navy brush-stroke banner behind short taglines. */
+    .brush-banner {
+        @apply inline-block bg-navy-700 px-5 py-2 text-white;
+        clip-path: polygon(1% 8%, 99% 0, 100% 88%, 3% 100%, 0 55%);
+    }
+
+    /* Torn-paper top edge used above the navy footer. */
+    .torn-top {
+        clip-path: polygon(0 18px, 4% 8px, 9% 16px, 15% 4px, 22% 14px, 28% 6px, 35% 17px, 42% 5px, 49% 13px, 56% 3px, 63% 15px, 70% 6px, 77% 16px, 84% 4px, 91% 14px, 96% 7px, 100% 15px, 100% 100%, 0 100%);
     }
 
     .chip {
-        @apply inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-3 py-1 text-sm text-stone-700 hover:border-forest-500 hover:text-forest-700;
+        @apply inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-3 py-1 text-sm text-stone-700 hover:border-navy-500 hover:text-navy-700;
     }
 
     .chip-active {
-        @apply border-forest-600 bg-forest-600 text-white hover:text-white;
+        @apply border-navy-600 bg-navy-600 text-white hover:text-white;
     }
 
     .input {
-        @apply w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-forest-500 focus:outline-none;
+        @apply w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-navy-500 focus:outline-none;
     }
 
     .prose-story p {
@@ -78,7 +115,7 @@
     }
 
     .prose-story a {
-        @apply text-forest-700 underline;
+        @apply text-navy-700 underline;
     }
 
     .prose-story ul {
@@ -90,6 +127,6 @@
     }
 
     .prose-story blockquote {
-        @apply my-6 border-l-4 border-saffron-400 pl-4 italic text-stone-700;
+        @apply my-6 border-l-4 border-accent-400 pl-4 italic text-stone-700;
     }
 }

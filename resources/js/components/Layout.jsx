@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { Icon } from './Icons';
+import { Logo } from './Brand';
 import { isStaff } from '../admin/lib';
 
 const NAV = [
@@ -21,14 +22,6 @@ const MOBILE_NAV = [
     { to: '/saved', label: 'Saved', icon: 'heart' },
 ];
 
-function Logo() {
-    return (
-        <Link to="/" className="flex items-baseline gap-1 font-display text-xl font-bold tracking-tight text-forest-700" aria-label="DoonPortal home">
-            DOON<span className="text-saffron-500">PORTAL</span>
-        </Link>
-    );
-}
-
 function Header() {
     const { user } = useAuth();
     const [open, setOpen] = useState(false);
@@ -42,13 +35,13 @@ function Header() {
     }
 
     const linkClass = ({ isActive }) =>
-        `rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${isActive ? 'bg-forest-50 text-forest-700' : 'text-stone-700 hover:text-forest-700'}`;
+        `relative px-3 py-1.5 text-sm font-semibold uppercase tracking-wide transition-colors after:absolute after:inset-x-3 after:-bottom-0.5 after:h-0.5 after:rounded after:bg-accent-500 ${isActive ? 'text-navy-700 after:opacity-100' : 'text-stone-600 after:opacity-0 hover:text-navy-700'}`;
 
     return (
-        <header className="sticky top-0 z-30 border-b border-stone-200/80 bg-cream/95 backdrop-blur">
+        <header className="sticky top-0 z-30 border-t-4 border-b border-t-accent-500 border-b-stone-200/80 bg-cream/95 backdrop-blur">
             <div className="container-page flex h-16 items-center gap-4">
-                <Logo />
-                <nav className="ml-4 hidden items-center gap-1 lg:flex" aria-label="Main">
+                <Logo tagline />
+                <nav className="ml-4 hidden items-center gap-1 xl:flex" aria-label="Main">
                     {NAV.map((item) => (
                         <NavLink key={item.to} to={item.to} className={linkClass}>
                             {item.label}
@@ -56,27 +49,27 @@ function Header() {
                     ))}
                 </nav>
                 <div className="ml-auto flex items-center gap-2">
-                    <button type="button" onClick={() => navigate('/search')} className="btn-secondary hidden sm:inline-flex">
+                    <button type="button" onClick={() => navigate('/search')} className="btn-secondary hidden whitespace-nowrap sm:inline-flex">
                         <Icon name="search" size={16} /> Search Doon
                     </button>
                     {isStaff(user) && (
-                        <Link to="/admin" className="hidden rounded-full px-3 py-1.5 text-sm font-semibold text-forest-700 hover:bg-forest-50 sm:inline-flex">
+                        <Link to="/admin" className="hidden rounded-full px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50 sm:inline-flex">
                             Admin
                         </Link>
                     )}
-                    <Link to="/business-portal" className="btn-primary hidden md:inline-flex">
+                    <Link to="/business-portal" className="btn-primary hidden whitespace-nowrap md:inline-flex">
                         <Icon name="store" size={16} /> Business
                     </Link>
-                    <Link to={user ? '/saved' : '/login'} className="hidden rounded-full p-2 text-stone-700 hover:text-forest-700 sm:block" aria-label={user ? 'My DoonPortal' : 'Sign in'}>
+                    <Link to={user ? '/saved' : '/login'} className="hidden rounded-full p-2 text-stone-700 hover:text-navy-700 sm:block" aria-label={user ? 'My DoonPortal' : 'Sign in'}>
                         <Icon name="user" />
                     </Link>
-                    <button type="button" className="rounded-full p-2 lg:hidden" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="mobile-menu" aria-label="Menu">
+                    <button type="button" className="rounded-full p-2 xl:hidden" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="mobile-menu" aria-label="Menu">
                         <Icon name={open ? 'close' : 'menu'} />
                     </button>
                 </div>
             </div>
             {open && (
-                <nav id="mobile-menu" className="border-t border-stone-200 bg-cream lg:hidden" aria-label="Mobile">
+                <nav id="mobile-menu" className="border-t border-stone-200 bg-cream xl:hidden" aria-label="Mobile">
                     <div className="container-page grid grid-cols-2 gap-1 py-3">
                         {[...NAV, { to: '/areas', label: 'Areas' }, { to: '/collections', label: 'Best of Doon' }, { to: '/business-portal', label: 'List your business' }, { to: user ? '/saved' : '/login', label: user ? 'My DoonPortal' : 'Sign in' }, ...(isStaff(user) ? [{ to: '/admin', label: 'Admin' }] : [])].map((item) => (
                             <NavLink key={item.to + item.label} to={item.to} className={linkClass}>
@@ -99,7 +92,7 @@ function MobileNav() {
                         <NavLink
                             to={item.to}
                             end={item.end}
-                            className={({ isActive }) => `flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${isActive ? 'text-forest-700' : 'text-stone-500'}`}
+                            className={({ isActive }) => `flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${isActive ? 'text-navy-700' : 'text-stone-500'}`}
                         >
                             <Icon name={item.icon} />
                             {item.label}
@@ -119,21 +112,20 @@ function Footer() {
         ['About', [['/about', 'About DoonPortal'], ['/privacy', 'Privacy'], ['/terms', 'Terms']]],
     ];
     return (
-        <footer className="mt-16 border-t border-stone-200 bg-forest-900 pb-24 text-forest-100 md:pb-0">
+        <footer className="torn-top mt-16 bg-navy-900 pb-24 pt-6 text-navy-100 md:pb-0">
             <div className="container-page grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-5">
                 <div>
-                    <p className="font-display text-xl font-bold text-white">
-                        DOON<span className="text-saffron-400">PORTAL</span>
-                    </p>
-                    <p className="mt-2 text-sm text-forest-200">All things Doon. Discover. Connect. Belong.</p>
+                    <Logo light />
+                    <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-navy-200">Discover. Connect. Belong.</p>
+                    <p className="mt-3 font-script text-2xl leading-tight text-accent-400">Local stories. Real connections.</p>
                 </div>
                 {columns.map(([heading, links]) => (
                     <div key={heading}>
-                        <p className="text-sm font-semibold text-white">{heading}</p>
+                        <p className="text-sm font-semibold uppercase tracking-wide text-white">{heading}</p>
                         <ul className="mt-3 space-y-2 text-sm">
                             {links.map(([to, label]) => (
                                 <li key={label}>
-                                    <Link to={to} className="text-forest-200 hover:text-white">
+                                    <Link to={to} className="text-navy-200 hover:text-accent-400">
                                         {label}
                                     </Link>
                                 </li>
@@ -143,7 +135,7 @@ function Footer() {
                 ))}
             </div>
             <div className="border-t border-white/10">
-                <p className="container-page py-4 text-xs text-forest-200">© {new Date().getFullYear()} DoonPortal · Dehradun, Uttarakhand</p>
+                <p className="container-page py-4 text-xs text-navy-200">© {new Date().getFullYear()} DoonPortal · Dehradun, Uttarakhand</p>
             </div>
         </footer>
     );

@@ -62,7 +62,7 @@ export function UserList() {
                                 data?.data?.map((u) => (
                                     <tr key={u.id} className="hover:bg-stone-50">
                                         <td className="px-3 py-2">
-                                            <Link to={`/admin/users/${u.id}`} className="font-semibold text-forest-700 hover:underline">
+                                            <Link to={`/admin/users/${u.id}`} className="font-semibold text-navy-700 hover:underline">
                                                 {u.name}
                                             </Link>
                                             {u.is_self && <span className="ml-2 text-xs text-stone-500">(you)</span>}
@@ -140,7 +140,7 @@ function RoleEditor({ target, onSaved }) {
                 <button type="button" className="btn-primary" onClick={save} disabled={Boolean(lockedReason) || state.busy}>
                     {state.busy ? 'Saving…' : 'Save roles'}
                 </button>
-                {state.saved && <span className="text-sm text-forest-700">Saved.</span>}
+                {state.saved && <span className="text-sm text-navy-700">Saved.</span>}
                 {state.error && (
                     <span className="text-sm text-red-700" role="alert">
                         {state.error}

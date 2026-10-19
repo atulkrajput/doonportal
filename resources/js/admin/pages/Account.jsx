@@ -75,7 +75,7 @@ function ChangePasswordForm() {
                     {state.busy ? 'Saving…' : 'Change password'}
                 </button>
                 {state.message && (
-                    <span role={state.tone === 'error' ? 'alert' : 'status'} className={`text-sm ${state.tone === 'error' ? 'text-red-700' : 'text-forest-700'}`}>
+                    <span role={state.tone === 'error' ? 'alert' : 'status'} className={`text-sm ${state.tone === 'error' ? 'text-red-700' : 'text-navy-700'}`}>
                         {state.message}
                     </span>
                 )}

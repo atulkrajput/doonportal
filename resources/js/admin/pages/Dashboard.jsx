@@ -9,7 +9,7 @@ function Card({ title, to, total, children }) {
             <div className="flex items-baseline justify-between gap-2">
                 <h2 className="font-semibold">{title}</h2>
                 {to && (
-                    <Link to={to} className="text-sm font-semibold text-forest-700 hover:underline">
+                    <Link to={to} className="text-sm font-semibold text-navy-700 hover:underline">
                         Manage →
                     </Link>
                 )}
@@ -82,11 +82,11 @@ export default function Dashboard() {
                 {d.taxonomy && (
                     <Card title="Taxonomy">
                         <p className="mt-2 text-sm">
-                            <Link to="/admin/areas" className="font-semibold text-forest-700 hover:underline">
+                            <Link to="/admin/areas" className="font-semibold text-navy-700 hover:underline">
                                 {d.taxonomy.areas} areas
                             </Link>{' '}
                             ·{' '}
-                            <Link to="/admin/categories" className="font-semibold text-forest-700 hover:underline">
+                            <Link to="/admin/categories" className="font-semibold text-navy-700 hover:underline">
                                 {d.taxonomy.categories} categories
                             </Link>
                         </p>
@@ -111,7 +111,7 @@ export default function Dashboard() {
                 <section className="mt-6">
                     <div className="mb-2 flex items-baseline justify-between">
                         <h2 className="font-semibold">Recent activity</h2>
-                        <Link to="/admin/audit-logs" className="text-sm font-semibold text-forest-700 hover:underline">
+                        <Link to="/admin/audit-logs" className="text-sm font-semibold text-navy-700 hover:underline">
                             Full audit log →
                         </Link>
                     </div>

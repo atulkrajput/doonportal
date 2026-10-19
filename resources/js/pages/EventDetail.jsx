@@ -50,7 +50,7 @@ function EventView({ event }) {
                     <Breadcrumbs items={crumbs} />
                     <div className="mt-3 flex flex-wrap gap-2">
                         <DemoBadge show={event.is_demo} />
-                        {event.phase === 'LIVE' && <span className="rounded-full bg-forest-100 px-2 py-0.5 text-xs font-semibold text-forest-700">Happening now</span>}
+                        {event.phase === 'LIVE' && <span className="rounded-full bg-navy-100 px-2 py-0.5 text-xs font-semibold text-navy-700">Happening now</span>}
                         {event.phase === 'COMPLETED' && <span className="rounded-full bg-stone-200 px-2 py-0.5 text-xs font-semibold">This event has ended</span>}
                     </div>
                     {event.is_cancelled && (
@@ -59,11 +59,11 @@ function EventView({ event }) {
                         </div>
                     )}
                     {event.is_rescheduled && !event.is_cancelled && (
-                        <div className="mt-3 rounded-xl border border-saffron-400 bg-saffron-100 p-3 text-sm">
+                        <div className="mt-3 rounded-xl border border-accent-400 bg-accent-100 p-3 text-sm">
                             <strong>Rescheduled</strong> from {formatEventDate(event.original_starts_at, event.timezone)}.
                         </div>
                     )}
-                    <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-saffron-500">{formatEventDate(event.starts_at, event.timezone)}</p>
+                    <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-accent-500">{formatEventDate(event.starts_at, event.timezone)}</p>
                     <h1 className="mt-1 font-display text-3xl font-bold sm:text-4xl">{event.title}</h1>
                     {event.summary && <p className="mt-1 text-stone-600">{event.summary}</p>}
                     <div className="mt-5 flex flex-wrap gap-2">
@@ -109,7 +109,7 @@ function EventView({ event }) {
                                     {event.venue?.name}
                                     {event.venue?.address && <span className="block">{event.venue.address}</span>}
                                     {event.area && (
-                                        <Link to={`/area/${event.area.slug}`} className="block text-forest-700 hover:underline">
+                                        <Link to={`/area/${event.area.slug}`} className="block text-navy-700 hover:underline">
                                             {event.area.name}
                                         </Link>
                                     )}

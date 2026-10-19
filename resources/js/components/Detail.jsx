@@ -28,7 +28,7 @@ export function Breadcrumbs({ items }) {
                     <li key={label} className="flex items-center gap-1">
                         {i > 0 && <span aria-hidden="true">/</span>}
                         {to ? (
-                            <Link to={to} className="hover:text-forest-700">
+                            <Link to={to} className="hover:text-navy-700">
                                 {label}
                             </Link>
                         ) : (
@@ -58,7 +58,7 @@ export function breadcrumbJsonLd(items) {
 export function InfoRow({ icon, children }) {
     return (
         <div className="flex gap-3 py-2 text-sm">
-            <span className="mt-0.5 shrink-0 text-forest-600">{icon}</span>
+            <span className="mt-0.5 shrink-0 text-navy-600">{icon}</span>
             <div className="min-w-0 text-stone-700">{children}</div>
         </div>
     );

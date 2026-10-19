@@ -202,7 +202,7 @@ function CollectionItemsPanel({ record, onChanged }) {
                 <button type="button" className="btn-primary" onClick={save} disabled={state.busy}>
                     {state.busy ? 'Saving…' : 'Save items'}
                 </button>
-                {state.saved && <span className="text-sm text-forest-700">Saved.</span>}
+                {state.saved && <span className="text-sm text-navy-700">Saved.</span>}
                 {state.error && (
                     <span className="text-sm text-red-700" role="alert">
                         {state.error}
@@ -264,7 +264,7 @@ function EditForm({ resourceKey, resource, record, onSaved }) {
                     {state.busy ? 'Saving…' : record ? 'Save changes' : `Create ${resource.singular.toLowerCase()}`}
                 </button>
                 {state.message && (
-                    <span role={state.tone === 'error' ? 'alert' : 'status'} className={`text-sm ${state.tone === 'error' ? 'text-red-700' : 'text-forest-700'}`}>
+                    <span role={state.tone === 'error' ? 'alert' : 'status'} className={`text-sm ${state.tone === 'error' ? 'text-red-700' : 'text-navy-700'}`}>
                         {state.message}
                     </span>
                 )}
@@ -347,9 +347,9 @@ export default function ResourceEdit({ resourceKey, resource }) {
             <div className="mb-4 mt-1 flex flex-wrap items-center gap-3">
                 <h1 className="font-display text-2xl font-bold">{title}</h1>
                 {record?.status && <StatusBadge status={record.status} />}
-                {record?.is_demo && <span className="rounded bg-saffron-100 px-2 py-0.5 text-xs text-amber-800">Demo data</span>}
+                {record?.is_demo && <span className="rounded bg-accent-100 px-2 py-0.5 text-xs text-amber-800">Demo data</span>}
                 {record && resource.publicPath && !record.is_trashed && (
-                    <a href={resource.publicPath(record)} target="_blank" rel="noreferrer" className="text-sm font-semibold text-forest-700 hover:underline">
+                    <a href={resource.publicPath(record)} target="_blank" rel="noreferrer" className="text-sm font-semibold text-navy-700 hover:underline">
                         View on site ↗
                     </a>
                 )}
@@ -364,7 +364,7 @@ export default function ResourceEdit({ resourceKey, resource }) {
                             <p>Created {formatDateTime(record.created_at)}</p>
                             <p>Updated {formatDateTime(record.updated_at)}</p>
                             {can(user, PERMISSIONS.audit) && (
-                                <Link to={`/admin/audit-logs?auditable_type=${resource.type}&auditable_id=${record.id}`} className="mt-2 inline-block font-semibold text-forest-700 hover:underline">
+                                <Link to={`/admin/audit-logs?auditable_type=${resource.type}&auditable_id=${record.id}`} className="mt-2 inline-block font-semibold text-navy-700 hover:underline">
                                     History →
                                 </Link>
                             )}

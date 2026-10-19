@@ -4,9 +4,9 @@ import { CardGrid } from './Cards';
 
 export function PageHeader({ eyebrow, title, children }) {
     return (
-        <div className="border-b border-stone-200 bg-gradient-to-b from-forest-50 to-cream">
+        <div className="border-b border-stone-200 bg-gradient-to-b from-navy-50 to-cream">
             <div className="container-page py-8 sm:py-10">
-                {eyebrow && <div className="text-sm font-semibold uppercase tracking-wide text-forest-600">{eyebrow}</div>}
+                {eyebrow && <div className="text-sm font-semibold uppercase tracking-wide text-navy-600">{eyebrow}</div>}
                 <h1 className="mt-1 font-display text-3xl font-bold text-ink sm:text-4xl">{title}</h1>
                 {children && <div className="mt-2 max-w-2xl text-stone-600">{children}</div>}
             </div>
@@ -23,7 +23,7 @@ export function Section({ title, to, linkLabel = 'See all', children, subtitle }
                     {subtitle && <p className="mt-1 text-sm text-stone-600">{subtitle}</p>}
                 </div>
                 {to && (
-                    <Link to={to} className="shrink-0 text-sm font-semibold text-forest-700 hover:underline">
+                    <Link to={to} className="shrink-0 text-sm font-semibold text-navy-700 hover:underline">
                         {linkLabel} →
                     </Link>
                 )}

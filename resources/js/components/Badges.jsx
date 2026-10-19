@@ -6,7 +6,7 @@ export function DemoBadge({ show }) {
     }
     return (
         <span
-            className="inline-flex items-center rounded-full bg-saffron-100 px-2 py-0.5 text-xs font-semibold text-amber-900"
+            className="inline-flex items-center rounded-full bg-accent-100 px-2 py-0.5 text-xs font-semibold text-amber-900"
             title="Fictional sample content for development. Not a real listing."
         >
             Demo data
@@ -19,7 +19,7 @@ export function VerifiedBadge({ show }) {
         return null;
     }
     return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-forest-100 px-2 py-0.5 text-xs font-semibold text-forest-700" title="Details confirmed by the DoonPortal team">
+        <span className="inline-flex items-center gap-1 rounded-full bg-navy-100 px-2 py-0.5 text-xs font-semibold text-navy-700" title="Details confirmed by the DoonPortal team">
             <Icon name="check" size={14} /> Verified
         </span>
     );
@@ -30,7 +30,7 @@ export function OpenBadge({ open }) {
         return null;
     }
     return open ? (
-        <span className="text-xs font-semibold text-forest-600">Open now</span>
+        <span className="text-xs font-semibold text-navy-600">Open now</span>
     ) : (
         <span className="text-xs font-semibold text-stone-500">Closed now</span>
     );
@@ -42,7 +42,7 @@ export function Rating({ rating }) {
     }
     return (
         <span className="inline-flex items-center gap-1 text-sm font-semibold text-stone-800">
-            <Icon name="star" size={15} className="fill-saffron-400 text-saffron-500" />
+            <Icon name="star" size={15} className="fill-accent-400 text-accent-500" />
             {rating.average.toFixed(1)}
             <span className="font-normal text-stone-500">({rating.count})</span>
         </span>

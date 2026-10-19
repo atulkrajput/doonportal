@@ -47,7 +47,7 @@ function StoryView({ story }) {
         <article className="container-page max-w-3xl py-8">
             <Breadcrumbs items={crumbs} />
             <div className="mt-4 flex items-center gap-2">
-                <span className="text-sm font-semibold uppercase tracking-wide text-forest-600">{story.story_type.toLowerCase()}</span>
+                <span className="text-sm font-semibold uppercase tracking-wide text-navy-600">{story.story_type.toLowerCase()}</span>
                 <DemoBadge show={story.is_demo} />
             </div>
             <h1 className="mt-2 font-display text-3xl font-bold leading-tight sm:text-5xl">{story.title}</h1>

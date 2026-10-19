@@ -11,7 +11,7 @@ function CategoryTree({ categories, base }) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {categories.map((parent) => (
                 <div key={parent.id} className="rounded-2xl border border-stone-200 bg-white p-5">
-                    <Link to={`${base}/${parent.slug}`} className="font-display text-lg font-bold hover:text-forest-700">
+                    <Link to={`${base}/${parent.slug}`} className="font-display text-lg font-bold hover:text-navy-700">
                         {parent.name}
                     </Link>
                     {parent.children?.length > 0 && (

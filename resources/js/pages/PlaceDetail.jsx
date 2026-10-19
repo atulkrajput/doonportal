@@ -65,12 +65,12 @@ function PlaceView({ place }) {
                     <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-stone-600">
                         <Rating rating={place.rating} />
                         {place.categories?.map((c) => (
-                            <Link key={c.id} to={`/places/${c.slug}`} className="hover:text-forest-700">
+                            <Link key={c.id} to={`/places/${c.slug}`} className="hover:text-navy-700">
                                 {c.name}
                             </Link>
                         ))}
                         {place.area && (
-                            <Link to={`/area/${place.area.slug}`} className="hover:text-forest-700">
+                            <Link to={`/area/${place.area.slug}`} className="hover:text-navy-700">
                                 {place.area.name}
                             </Link>
                         )}

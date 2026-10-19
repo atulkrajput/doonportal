@@ -92,7 +92,7 @@ export default function AuditLogs() {
                                             <td className="px-3 py-2 font-mono text-xs">{log.action}</td>
                                             <td className="px-3 py-2 text-xs">
                                                 {log.auditable_type ? (
-                                                    <button type="button" className="text-forest-700 hover:underline" onClick={() => filters.set('auditable_id', log.auditable_id)}>
+                                                    <button type="button" className="text-navy-700 hover:underline" onClick={() => filters.set('auditable_id', log.auditable_id)}>
                                                         {log.auditable_type} …{log.auditable_id?.slice(-6)}
                                                     </button>
                                                 ) : (
@@ -100,7 +100,7 @@ export default function AuditLogs() {
                                                 )}
                                             </td>
                                             <td className="px-3 py-2 text-right">
-                                                <button type="button" className="text-xs font-semibold text-forest-700 hover:underline" onClick={() => setOpen(open === log.id ? null : log.id)} aria-expanded={open === log.id}>
+                                                <button type="button" className="text-xs font-semibold text-navy-700 hover:underline" onClick={() => setOpen(open === log.id ? null : log.id)} aria-expanded={open === log.id}>
                                                     {open === log.id ? 'Hide' : 'Changes'}
                                                 </button>
                                             </td>

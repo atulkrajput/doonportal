@@ -33,7 +33,7 @@ function Require({ permission, children }) {
 }
 
 function Sidebar({ user, onNavigate }) {
-    const link = ({ isActive }) => `block rounded-lg px-3 py-1.5 text-sm ${isActive ? 'bg-forest-600 font-semibold text-white' : 'text-stone-700 hover:bg-forest-50'}`;
+    const link = ({ isActive }) => `block rounded-lg px-3 py-1.5 text-sm ${isActive ? 'bg-navy-600 font-semibold text-white' : 'text-stone-700 hover:bg-navy-50'}`;
     const groups = NAV.map((keys) => keys.filter((k) => can(user, RESOURCES[k].permission))).filter((g) => g.length);
 
     return (
@@ -98,14 +98,14 @@ function AdminLayout() {
                     <button type="button" className="rounded p-1 lg:hidden" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="admin-nav" aria-label="Menu">
                         <Icon name={open ? 'close' : 'menu'} />
                     </button>
-                    <Link to="/admin" className="whitespace-nowrap font-display text-lg font-bold text-forest-700">
-                        DOON<span className="text-saffron-500">PORTAL</span> <span className="hidden text-sm font-semibold text-stone-500 sm:inline">Admin</span>
+                    <Link to="/admin" className="whitespace-nowrap font-display text-lg font-bold text-navy-700">
+                        DOON<span className="text-accent-500">PORTAL</span> <span className="hidden text-sm font-semibold text-stone-500 sm:inline">Admin</span>
                     </Link>
                     <div className="ml-auto flex items-center gap-3 whitespace-nowrap text-sm">
-                        <Link to="/admin/account" className="hidden text-stone-600 hover:text-forest-700 hover:underline sm:inline" title="My account and password">
+                        <Link to="/admin/account" className="hidden text-stone-600 hover:text-navy-700 hover:underline sm:inline" title="My account and password">
                             {user.name} · {user.roles.filter((r) => r !== 'USER').map(humanize).join(', ')}
                         </Link>
-                        <Link to="/" className="font-semibold text-forest-700 hover:underline">
+                        <Link to="/" className="font-semibold text-navy-700 hover:underline">
                             View site
                         </Link>
                         <button type="button" className="text-stone-600 hover:text-ink" onClick={logout}>
