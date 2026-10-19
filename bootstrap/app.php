@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->throttleApi('api');
+        // Prepended so the headers also wrap responses from priority-sorted middleware (e.g. auth 401s).
+        $middleware->web(prepend: SecurityHeaders::class);
+        $middleware->api(prepend: SecurityHeaders::class);
         // API guests get a JSON 401 instead of a redirect to a login route.
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : '/login');
     })

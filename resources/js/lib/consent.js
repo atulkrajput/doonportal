@@ -60,10 +60,16 @@ export function openCookieSettings() {
 
 const loaded = new Set();
 
+/** The page's CSP nonce (see app.blade.php); browsers expose it only via the property. */
+function cspNonce() {
+    return document.querySelector('meta[property="csp-nonce"]')?.nonce || '';
+}
+
 function addScript(src, inline) {
     if (src) {
         const s = document.createElement('script');
         s.async = true;
+        s.nonce = cspNonce();
         s.src = src;
         document.head.appendChild(s);
     }
