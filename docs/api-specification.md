@@ -10,7 +10,7 @@ Statuses used: 200, 201, 202, 204, 401, 403 (signed in but not permitted — adm
 
 Authentication: `Authorization: Bearer <token>` from register/login. Public endpoints accept a token optionally (editors can then see unpublished records).
 
-Rate limits: `api` 120/min per user or IP; `auth` 10/min per IP and 5/min per email; `analytics` 60/min.
+Rate limits: `api` 120/min per user or IP; `auth` 10/min per IP and 5/min per email; `password` 5/min per user; `analytics` 60/min.
 
 ## Common list parameters
 
@@ -32,6 +32,7 @@ Rate limits: `api` 120/min per user or IP; `auth` 10/min per IP and 5/min per em
 | POST | `/auth/reset-password` | `token, email, password, password_confirmation`; revokes all tokens |
 | GET | `/auth/me`, `/me` | private profile incl. roles + permissions |
 | PATCH | `/me` | `name?, phone?, bio?` (email/roles not changeable here) |
+| PUT | `/me/password` | `current_password, password, password_confirmation` → 200 `{message}`. 422 if the current password is wrong, the new one is weak (≥ 8 chars) or unchanged. Revokes every **other** token (the one used stays valid); audited as `user.password_changed` (no password data logged); throttled 5/min per user. |
 
 ## Discovery
 

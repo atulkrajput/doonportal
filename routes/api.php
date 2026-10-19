@@ -36,6 +36,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [MeController::class, 'show'])->name('me.show');
         Route::patch('me', [MeController::class, 'update'])->name('me.update');
+        Route::put('me/password', [MeController::class, 'updatePassword'])
+            ->middleware('throttle:password')->name('me.password');
     });
 
     // Public discovery

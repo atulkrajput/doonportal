@@ -12,6 +12,7 @@ import ResourceEdit from './pages/ResourceEdit';
 import { UserDetail, UserList } from './pages/Users';
 import AuditLogs from './pages/AuditLogs';
 import MediaLibrary from './pages/MediaLibrary';
+import Account from './pages/Account';
 
 function Forbidden({ title = 'You don’t have access to this section.' }) {
     return (
@@ -74,6 +75,13 @@ function Sidebar({ user, onNavigate }) {
                     </li>
                 )}
             </ul>
+            <ul className="space-y-0.5 border-t border-stone-200 pt-4">
+                <li>
+                    <NavLink to="/admin/account" className={link}>
+                        My account
+                    </NavLink>
+                </li>
+            </ul>
         </nav>
     );
 }
@@ -94,9 +102,9 @@ function AdminLayout() {
                         DOON<span className="text-saffron-500">PORTAL</span> <span className="hidden text-sm font-semibold text-stone-500 sm:inline">Admin</span>
                     </Link>
                     <div className="ml-auto flex items-center gap-3 whitespace-nowrap text-sm">
-                        <span className="hidden text-stone-600 sm:inline">
+                        <Link to="/admin/account" className="hidden text-stone-600 hover:text-forest-700 hover:underline sm:inline" title="My account and password">
                             {user.name} · {user.roles.filter((r) => r !== 'USER').map(humanize).join(', ')}
-                        </span>
+                        </Link>
                         <Link to="/" className="font-semibold text-forest-700 hover:underline">
                             View site
                         </Link>
@@ -192,6 +200,7 @@ export default function AdminApp() {
                         </Require>
                     }
                 />
+                <Route path="account" element={<Account />} />
                 <Route path="*" element={<Forbidden title="Page not found." />} />
             </Route>
         </Routes>

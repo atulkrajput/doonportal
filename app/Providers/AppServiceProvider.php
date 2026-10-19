@@ -75,6 +75,9 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(5)->by('email:'.strtolower((string) $request->input('email'))),
         ]);
 
+        // Limits guessing of the current password with a stolen token.
+        RateLimiter::for('password', fn (Request $request) => Limit::perMinute(5)->by('password:'.($request->user()?->id ?: $request->ip())));
+
         RateLimiter::for('analytics', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
     }
 }

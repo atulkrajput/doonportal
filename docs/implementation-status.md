@@ -4,7 +4,7 @@ _Last updated: 2026-10-19 · Branch `claude/phase3-admin-cms` (built on `claude/
 
 ## Summary
 
-Phases 0–3 are **VERIFIED**: 103 PHPUnit tests (746 assertions) pass on SQLite and on MariaDB 10.4 (`DB_CONNECTION=mysql DB_DATABASE=doonportal_test php vendor/bin/phpunit`); `vendor/bin/pint --test`, `npm run lint` and `npm run build` pass. Phases 0–2 were browser-checked at 1280px and 375px. Phase 3's admin UI was browser-checked (desktop and 375px) against a separate local database with demo data, signed in as EDITOR and ADMIN test accounts: login redirect, permission-filtered navigation, list filters, business edit round-trip, business status change, event date locking + reschedule panel, collection item picker, story linked entities, user role editor (locked for administrators / self), audit log diff view, dashboard.
+Phases 0–3 are **VERIFIED**: 106 PHPUnit tests (775 assertions) pass on SQLite and on MariaDB 10.4 (`DB_CONNECTION=mysql DB_DATABASE=doonportal_test php vendor/bin/phpunit`); `vendor/bin/pint --test`, `npm run lint` and `npm run build` pass. Phases 0–2 were browser-checked at 1280px and 375px. Phase 3's admin UI was browser-checked (desktop and 375px) against a separate local database with demo data, signed in as EDITOR and ADMIN test accounts: login redirect, permission-filtered navigation, list filters, business edit round-trip, business status change, event date locking + reschedule panel, collection item picker, story linked entities, user role editor (locked for administrators / self), audit log diff view, dashboard.
 
 ## Task ledger
 
@@ -37,6 +37,7 @@ Phases 0–3 are **VERIFIED**: 103 PHPUnit tests (746 assertions) pass on SQLite
 | P3-6 | Media upload service (content-sniffed MIME, size/dimension limits, server file names, public disk) | P3-1 | VERIFIED | `MediaService`, `Admin/MediaController` | MediaAuditDashboardTest |
 | P3-7 | Server-side HTML sanitizer for story bodies | — | VERIFIED | `HtmlSanitizer` (symfony/html-sanitizer) | HtmlSanitizerTest (12), EditorialAdminTest |
 | P3-8 | Audit-log listing (filters) and dashboard counts | P3-4 | VERIFIED | `Admin/AuditLogController`, `Admin/DashboardController` | MediaAuditDashboardTest |
+| P3-10 | Change password for the signed-in user (`PUT /me/password`) + admin "My account" page | P0-3 | VERIFIED | `MeController::updatePassword`, `ChangePasswordRequest`, `resources/js/admin/pages/Account.jsx` | ChangePasswordTest (3), browser check |
 | P3-9 | React admin under `/admin` (lazy chunk): guard from `/auth/me`, dashboard, list/edit screens with filters + pagination for all CMS resources, status/reschedule/items panels, media library, users & roles, audit log | P3-1–8 | VERIFIED | `resources/js/admin/*`, `main.jsx`, `Layout.jsx`, `pages/Auth.jsx` (`?next=`) | lint, build, browser check |
 
 ## Known issues / limitations

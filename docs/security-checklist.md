@@ -6,6 +6,7 @@ Legend: ✅ in place and tested · 🟡 partial · ⬜ not yet
 
 - ✅ Sanctum tokens; expiry 30 days; logout revokes the current token; password reset revokes all tokens
 - ✅ Login/register/reset throttled (10/min per IP, 5/min per email)
+- ✅ Change password (`PUT /me/password`, admin "My account" page): requires the current password, 5 attempts/min per user, signs out all other sessions, audited without password data (tested)
 - ✅ Forgot-password returns the same response for unknown emails
 - ✅ Roles assigned server-side only; `roles` not mass assignable; registration always gets USER (tested)
 - ✅ Policies on every entity; hidden records return 404; SUPER_ADMIN via `Gate::before`
