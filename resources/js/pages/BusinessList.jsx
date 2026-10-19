@@ -1,6 +1,5 @@
 import { Link, useParams } from 'react-router';
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { BusinessCard } from '../components/Cards';
 import { ChipGroup, PageHeader, ResultsGrid, SelectFilter, useUrlFilters } from '../components/Listing';
 
@@ -39,7 +38,6 @@ export default function BusinessList() {
     });
 
     const title = cat?.name ?? (filters.get('new') ? 'New in Doon' : 'Businesses in Dehradun');
-    useMeta({ title, description: `${title} — local listings on DoonPortal.` });
 
     return (
         <>

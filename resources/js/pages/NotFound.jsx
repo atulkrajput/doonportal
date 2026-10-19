@@ -1,9 +1,7 @@
 import { Link } from 'react-router';
-import { useMeta } from '../hooks/useMeta';
 import SearchBox from '../components/SearchBox';
 
 export default function NotFound() {
-    useMeta({ title: 'Page not found' });
     return (
         <div className="container-page py-20 text-center">
             <p className="font-display text-6xl font-bold text-navy-200">404</p>

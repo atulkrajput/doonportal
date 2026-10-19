@@ -79,6 +79,25 @@ Rate limits: `api` 120/min per user or IP; `auth` 10/min per IP and 5/min per em
 
 Stored with a daily-rotating HMAC session hash; raw IP and user agent are not stored.
 
+## SEO, sitemap and robots
+
+Every non-API path is served by `SpaController`, which renders the React shell **with server-side metadata** from `App\Services\Seo\SeoResolver`: `<title>`, description, canonical, robots, Open Graph/Twitter tags and JSON-LD (`WebSite`+`Organization` on `/`, `LocalBusiness`, `TouristAttraction`, `Event`, `Article`/`NewsArticle`, `CollectionPage`, `Place`, `BreadcrumbList`). Structured data uses only stored fields; demo records get none and are `noindex,nofollow`.
+
+| Behaviour | Rule |
+|---|---|
+| Status | Unknown paths, unknown/hidden records and inactive categories return **404** (shell still renders, `noindex`). |
+| Canonical URL | lowercase, no trailing slash; list pages keep only `?page=n` (n > 1). Uppercase or trailing-slash paths **301** to the canonical form; a guide under `/story/…` (or a story under `/guide/…`) 301s to its single URL. |
+| Robots | `noindex` for `/login`, `/register`, password pages, `/saved`, `/search`, `/admin/*`, filtered list URLs (any query other than `page`), demo records, records/pages with a `noindex` override, and every page when *Allow indexing* is off. |
+| Overrides | `seo_meta` per path (`/`, list/static pages, `/businesses/{category}`, `/places/{category}`) or per record; title template from SEO settings. |
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/seo?path=/business/x` | Same metadata as the server shell, for client-side navigation: `{status, title, description, canonical, robots, type, image, site_name, twitter_handle, json_ld}`. `path` must start with `/`. |
+| GET | `/robots.txt` | Generated; disallows `/admin`, `/api/`, auth and search pages, lists the sitemap. With indexing off: `Disallow: /`. |
+| GET | `/sitemap.xml` | Public, non-demo, non-`noindex` URLs with `lastmod`: home, static/list pages, businesses, places, upcoming events, stories/guides, collections, areas, active business/place categories. Cached 1 h (cleared when SEO overrides change). Empty when indexing is off. |
+
+Analytics: `page_view` (properties `{path}`) is sent by the SPA on every public navigation.
+
 ## Admin & CMS — `/api/v1/admin`
 
 All routes require `auth:sanctum` and the `admin.access` gate (the user holds at least one permission). Each group adds a permission gate (`can:<permission>`); SUPER_ADMIN passes every gate. Guests get 401; signed-in users without the permission get 403. Records are addressed by **id (ULID)**, not slug. Every write runs in a transaction and is written to `audit_logs` (actor, action, changed fields only as before/after, IP, user agent); no-op updates are not logged.
@@ -154,6 +173,39 @@ Use the returned `id` as `cover_media_id` / `logo_media_id`.
 | GET | `/admin/users` | `q` (name/email), `role` |
 | GET | `/admin/users/{id}` | id, name, email, phone, roles, permissions, `is_self`; never password or tokens |
 | PUT | `/admin/users/{id}/roles` | `roles[]` (RoleName values) replaces the user's roles; USER is always kept. **403** when changing your own roles, or when anyone but a SUPER_ADMIN grants or revokes ADMIN/SUPER_ADMIN or edits an account holding either. Audited as `user.roles_changed`. |
+
+### Monetization (`monetization.manage`)
+
+Payments are **recorded by staff**; there is no payment gateway yet. Amounts are in paise (INR).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET/POST | `/admin/plans` | `name`, `slug?`, `description?`, `price_paise`, `interval` (MONTH · YEAR · ONE_TIME), `features[]`, `is_active`, `sort_order`. List adds `subscriptions_count`, `active_subscriptions_count`. |
+| GET/PATCH/DELETE | `/admin/plans/{id}`, `POST …/restore` | Soft delete; 422 while the plan has active subscriptions. |
+| GET/POST | `/admin/subscriptions` | Filters `status`, `plan_id`, `business_id`, `q` (business name). Create: `business_id`, `plan_id`, `starts_on` (Y-m-d), optional `status`, `ends_on` (default: one billing period), `amount_paise` (default: plan price), `payment_method` (UPI · BANK_TRANSFER · CARD · CASH · CHEQUE · COMPLIMENTARY · OTHER), `payment_reference`, `paid_at` (IST, not in the future; requires a method), `notes`. |
+| GET/PATCH | `/admin/subscriptions/{id}` | No delete — cancel instead, so history stays intact. All changes audited. |
+| GET | `/admin/revenue?from=&to=` | Recorded payments only (`paid_at` in range, IST): `total_paise`, `payments`, `by_month[]`, `by_plan[]`, `by_method[]`, `mrr_paise` (active monthly/yearly normalised per month), `active_subscriptions`, `pending_subscriptions`, `upcoming_renewals` (next 30 days). Default range: last 12 months. |
+
+### Analytics (`analytics.view`)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/admin/analytics?from=&to=` | From `analytics_events` (no IP/UA stored; visitor = daily-rotating hash). `totals` (events, page_views, visitors), `daily[]` (page_views, events, visitors), `by_event[]`, `top_pages[]`, `top_entities[]` (with names), `top_searches[]`. Default 30 days, max 366. |
+
+### SEO & settings
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET/PUT | `/admin/settings/seo` | `seo.manage` | `site_name`, `title_template` (must contain `%s`), `home_title`, `home_description` (≤ 160), `default_description` (≤ 160), `default_image_media_id`, `allow_indexing`. |
+| GET/PUT | `/admin/settings/social` | `settings.manage` | `facebook_url`, `instagram_url`, `x_url`, `youtube_url`, `linkedin_url`, `whatsapp_url` — https links on the matching domain only; `x_handle`. Shown in the footer and as `sameAs`. |
+| GET/PUT | `/admin/settings/tracking` | `settings.manage` | IDs only, strictly validated: `ga4_measurement_id` (G-…), `gtm_container_id` (GTM-…), `meta_pixel_id` (digits), `clarity_project_id`, `google_site_verification`, `bing_site_verification`. Rendered into fixed snippets on public pages only (never `/admin`). |
+| GET/POST | `/admin/seo` | `seo.manage` | Overrides. Filters `type` (`path` or a record type), `q`. Create with `path` (site/list/category page) **or** `entity_type` (business · place · event · story · collection · area) + `entity_id`; `title` ≤ 70, `description` ≤ 160, `image_media_id`, `noindex`. |
+| PATCH/DELETE | `/admin/seo/{id}` | `seo.manage` | Target (`path`/entity) cannot change. |
+| GET | `/admin/seo/entity/{type}/{id}` | `seo.manage` | Override for one record (or `null`). |
+| GET | `/admin/seo/preview?path=` | `seo.manage` | Resolved metadata for any path, after overrides. |
+| GET | `/admin/seo/audit` | `seo.manage` | Per type: public count, missing description (not covered by an override), missing cover image, titles > 60 chars, up to 10 examples. |
+
+All settings changes are audited as `settings.{group}_updated` (changed keys only); overrides as `seo_meta.created/updated/deleted`.
 
 ### Audit log & dashboard
 

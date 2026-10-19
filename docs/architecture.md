@@ -52,7 +52,7 @@ resources/js/
   hooks/                 useApi (fetch + cancel), useMeta (title/canonical/JSON-LD)
   components/            Layout, Cards, Listing (filters/pagination), Detail, States, Badges, Icons
   pages/                 One file per route group
-  admin/                 Lazy-loaded staff area at /admin: resources.js (declarative CMS config), AdminApp (guard + layout), pages/, components/Fields
+  admin/                 Lazy-loaded staff area at /admin: menu.js (grouped left menu), resources.js (declarative CMS config), AdminApp (guard + layout), pages/ (incl. Analytics, Revenue, Seo, Settings), components/
 ```
 
 ## Key mechanisms
@@ -79,4 +79,6 @@ resources/js/
 | D6 | `locations` table not created | Coordinates live on businesses, places, venues and areas; a shared table adds joins without a current use. Revisit with the map phase. |
 | D7 | Story HTML sanitized on write (symfony/html-sanitizer) and again on render (DOMPurify) | Server-side allowlist is authoritative; the client pass is defence in depth. |
 | D8 | Admin records addressed by ULID; one generic admin resource representation | Slugs change and are for public URLs; staff need every column. The public API keeps its explicit field allowlists. |
+| D10 | SEO metadata resolved on the server for every URL (`SeoResolver`), reused by `/api/v1/seo` for client navigation | Crawlers and link previews get real titles, canonicals, structured data and 404s without running JavaScript; one source of truth instead of per-page client code. Full HTML prerendering of page bodies is still a Phase 9 item. |
+| D11 | Monetization records payments manually; no gateway | Lets the team sell listings now without handling card data; a gateway (Phase 8) will write the same `subscriptions` rows. |
 | D9 | Event and story times entered as Asia/Kolkata wall-clock time, stored in UTC | Matches how editors think about local events; the event's own `timezone` is honoured. |

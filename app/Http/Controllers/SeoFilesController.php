@@ -90,7 +90,7 @@ class SeoFilesController extends Controller
                 continue;
             }
             $seen[$path] = true;
-            $out[] = '  <url><loc>'.e(url($path)).'</loc>'.($updated ? '<lastmod>'.$updated->toAtomString().'</lastmod>' : '').'</url>';
+            $out[] = '  <url><loc>'.e(SeoResolver::absoluteUrl($path)).'</loc>'.($updated ? '<lastmod>'.$updated->toAtomString().'</lastmod>' : '').'</url>';
         }
         $out[] = '</urlset>';
 

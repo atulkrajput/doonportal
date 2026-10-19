@@ -1,6 +1,5 @@
 import { Link } from 'react-router';
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { PageHeader } from '../components/Listing';
 import { ErrorState, SkeletonCards } from '../components/States';
 
@@ -38,7 +37,6 @@ function useCategories(type) {
 export function Explore() {
     const businesses = useCategories('business');
     const places = useCategories('place');
-    useMeta({ title: 'All categories', description: 'Browse every category of businesses and places in Dehradun.' });
 
     return (
         <>
@@ -61,7 +59,6 @@ export function Explore() {
 
 export function Services() {
     const { data, loading, error } = useCategories('business');
-    useMeta({ title: 'Services in Dehradun', description: 'Home, professional, lifestyle, automotive, education and healthcare services.' });
     const groups = (data?.data ?? []).filter((c) => SERVICE_GROUPS.includes(c.slug));
 
     return (

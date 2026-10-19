@@ -1,6 +1,5 @@
 import { useParams } from 'react-router';
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { EntityCard } from '../components/Cards';
 import { DemoBadge } from '../components/Badges';
 import { Breadcrumbs, DetailGate } from '../components/Detail';
@@ -8,7 +7,6 @@ import { PageHeader } from '../components/Listing';
 import { EmptyState } from '../components/States';
 
 function CollectionView({ collection }) {
-    useMeta({ title: collection.title, description: collection.description });
 
     return (
         <>

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { api, errorMessage, fieldErrors } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { useMeta } from '../hooks/useMeta';
 
 function Field({ label, name, type = 'text', errors, ...props }) {
     const error = errors?.[name]?.[0];
@@ -64,7 +63,6 @@ function Message({ message }) {
 }
 
 export function Login() {
-    useMeta({ title: 'Sign in' });
     const { login } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -94,7 +92,6 @@ export function Login() {
 }
 
 export function Register() {
-    useMeta({ title: 'Create account' });
     const { register } = useAuth();
     const navigate = useNavigate();
     const form = useForm(async (values) => {
@@ -119,7 +116,6 @@ export function Register() {
 }
 
 export function ForgotPassword() {
-    useMeta({ title: 'Reset password' });
     const form = useForm(async (values) => {
         const { data } = await api.post('/auth/forgot-password', values);
         form.setMessage({ type: 'success', text: data.message });
@@ -139,7 +135,6 @@ export function ForgotPassword() {
 }
 
 export function ResetPassword() {
-    useMeta({ title: 'Choose a new password' });
     const [params] = useSearchParams();
     const navigate = useNavigate();
     const form = useForm(async (values) => {

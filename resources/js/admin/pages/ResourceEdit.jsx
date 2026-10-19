@@ -5,12 +5,15 @@ import { api, errorMessage, fieldErrors } from '../../api/client';
 import { useApi } from '../../hooks/useApi';
 import { ErrorState, PageLoading } from '../../components/States';
 import { EntityPicker, Field } from '../components/Fields';
+import { SeoPanel } from '../components/SeoBits';
 import { StatusBadge } from './ResourceList';
 import { useAuth } from '../../context/AuthContext';
 import { PERMISSIONS, TRANSITIONS, can, formatDateTime, humanize, toLocalInput } from '../lib';
 
 const EMPTY_BY_TYPE = { repeater: [], entities: [], relations: [], tags: [], checkbox: false };
 const ANNOUNCED = ['PUBLISHED', 'CANCELLED'];
+/** Record types with public pages, which get the Search & sharing panel. */
+const SEO_TYPES = ['business', 'place', 'event', 'story', 'collection', 'area'];
 
 function initialValues(resource, record) {
     const values = {};
@@ -194,7 +197,7 @@ function CollectionItemsPanel({ record, onChanged }) {
     };
 
     return (
-        <section className="rounded-2xl border border-stone-200 bg-white p-4 lg:col-span-2">
+        <section className="rounded-2xl border border-stone-200 bg-white p-4 xl:col-span-2">
             <h2 className="font-semibold">Items ({items.length})</h2>
             <p className="mb-3 mt-1 text-xs text-stone-500">Order here is the order readers see. Only public entities are shown on the site.</p>
             <EntityPicker types={['business', 'place', 'event', 'story']} value={items} onChange={setItems} withNotes />
@@ -333,7 +336,7 @@ export default function ResourceEdit({ resourceKey, resource }) {
         return <PageLoading />;
     }
 
-    const title = record ? record[resource.titleKey] : `New ${resource.singular.toLowerCase()}`;
+    const title = record ? (resource.recordTitle ? resource.recordTitle(record) : record[resource.titleKey]) : `New ${resource.singular.toLowerCase()}`;
     const storyBody = resource.type === 'story' && record?.body ? DOMPurify.sanitize(record.body) : null;
 
     return (
@@ -354,7 +357,7 @@ export default function ResourceEdit({ resourceKey, resource }) {
                     </a>
                 )}
             </div>
-            <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+            <div className="grid gap-4 xl:grid-cols-[1fr_20rem]">
                 <EditForm key={record ? record.id : 'new'} resourceKey={resourceKey} resource={resource} record={record} onSaved={setOverride} />
                 {record && (
                     <aside className="space-y-4">
@@ -369,12 +372,13 @@ export default function ResourceEdit({ resourceKey, resource }) {
                                 </Link>
                             )}
                         </section>
-                        <DangerZone resourceKey={resourceKey} resource={resource} record={record} onChanged={setOverride} />
+                        {SEO_TYPES.includes(resource.type) && can(user, PERMISSIONS.seo) && <SeoPanel resource={resource} record={record} />}
+                        {!resource.noDelete && <DangerZone resourceKey={resourceKey} resource={resource} record={record} onChanged={setOverride} />}
                     </aside>
                 )}
                 {record && resource.hasItems && <CollectionItemsPanel key={record.updated_at} record={record} onChanged={setOverride} />}
                 {storyBody && (
-                    <section className="rounded-2xl border border-stone-200 bg-white p-4 lg:col-span-2">
+                    <section className="rounded-2xl border border-stone-200 bg-white p-4 xl:col-span-2">
                         <h2 className="mb-2 font-semibold">Saved body (as sanitized by the server)</h2>
                         <div className="prose-story" dangerouslySetInnerHTML={{ __html: storyBody }} />
                     </section>

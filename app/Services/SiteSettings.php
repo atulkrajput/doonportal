@@ -96,6 +96,24 @@ class SiteSettings
     }
 
     /**
+     * @return array<string, string>
+     */
+    public static function messages(): array
+    {
+        return [
+            'title_template.regex' => 'The title template must contain %s where the page title goes.',
+            'ga4_measurement_id.regex' => 'Enter only the measurement ID, like G-ABC123XYZ.',
+            'gtm_container_id.regex' => 'Enter only the container ID, like GTM-AB12CD3.',
+            'meta_pixel_id.regex' => 'Enter only the numeric Pixel ID.',
+            'clarity_project_id.regex' => 'Enter only the Clarity project ID (lowercase letters and digits).',
+            'google_site_verification.regex' => 'Paste only the content value of the Google verification tag.',
+            'bing_site_verification.regex' => 'Paste only the content value of the Bing verification tag.',
+            '*.regex' => 'This must be a link to your profile on that site, starting with https://.',
+            'x_handle.regex' => 'Enter a handle like @doonportal.',
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function get(string $group): array

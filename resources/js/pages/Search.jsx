@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { track } from '../lib/analytics';
 import SearchBox from '../components/SearchBox';
 import { EntityCard } from '../components/Cards';
@@ -18,7 +17,6 @@ export default function Search() {
     const [params] = useSearchParams();
     const q = (params.get('q') ?? '').trim();
     const { data, loading, error } = useApi(q.length >= 2 ? '/search' : null, { q, limit: 8 });
-    useMeta({ title: q ? `Search: ${q}` : 'Search Doon' });
 
     useEffect(() => {
         if (q.length >= 2) {

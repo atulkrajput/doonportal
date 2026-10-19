@@ -2,12 +2,11 @@ import { useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router';
 import DOMPurify from 'dompurify';
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { track } from '../lib/analytics';
 import { formatDate } from '../lib/format';
 import { Cover, EntityCard } from '../components/Cards';
 import { DemoBadge } from '../components/Badges';
-import { Breadcrumbs, DetailGate, breadcrumbJsonLd } from '../components/Detail';
+import { Breadcrumbs, DetailGate } from '../components/Detail';
 
 const ALLOWED_TAGS = ['p', 'h2', 'h3', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'br', 'figure', 'figcaption', 'img'];
 
@@ -22,26 +21,6 @@ function StoryView({ story }) {
     useEffect(() => {
         track('story_read', { type: 'story', id: story.id });
     }, [story.id]);
-
-    useMeta({
-        title: story.seo?.title || story.title,
-        description: story.seo?.description,
-        jsonLd: story.is_demo
-            ? null
-            : {
-                  '@context': 'https://schema.org',
-                  '@graph': [
-                      {
-                          '@type': 'Article',
-                          headline: story.title,
-                          datePublished: story.published_at,
-                          ...(story.author ? { author: { '@type': 'Person', name: story.author.name } } : {}),
-                          ...(story.cover?.url ? { image: story.cover.url } : {}),
-                      },
-                      breadcrumbJsonLd(crumbs),
-                  ],
-              },
-    });
 
     return (
         <article className="container-page max-w-3xl py-8">

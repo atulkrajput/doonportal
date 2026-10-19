@@ -47,6 +47,11 @@ Legend: ✅ in place and tested · 🟡 partial · ⬜ not yet
 - ✅ Demo seeder refuses to run in production; demo records flagged and badged; admin forms cannot change the demo flag
 - ✅ Admin SPA code is a separate lazy chunk; route guards mirror permissions from `/auth/me` (the API is authoritative); `/admin` disallowed in robots.txt
 - ✅ Login `?next=` redirect accepts same-site paths only (no `//host` open redirect)
+- ✅ Tracking codes are **IDs only** (strict regex per tool) rendered into fixed, JSON-encoded snippets — staff cannot inject arbitrary script; tracking never loads in `/admin` (tested)
+- ✅ Social profile URLs must be https on the matching domain; JSON-LD and site config are encoded with `JSON_HEX_TAG` (no `</script>` break-out)
+- ✅ Demo records are `noindex,nofollow`, have no structured data and are excluded from the sitemap (tested)
+- ✅ Monetization: subscriptions cannot be deleted (cancel instead), plans with active subscriptions cannot be deleted, all changes audited; revenue reports only recorded payments
+- 🟡 Third-party tracking (GA4, GTM, Meta Pixel, Clarity) sets cookies when enabled: add a consent banner and update the privacy policy before switching any of them on in production
 - ✅ CHECK constraint on review ratings (MySQL/PostgreSQL); unique constraints for one review/favourite per user per entity
 - ⬜ Security headers / CSP / HSTS
 - ⬜ CORS restricted to site origin in production

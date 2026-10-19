@@ -1,6 +1,5 @@
 import { Link, useParams } from 'react-router';
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { PlaceCard } from '../components/Cards';
 import { ChipGroup, PageHeader, ResultsGrid, SelectFilter, useUrlFilters } from '../components/Listing';
 import { useAreaOptions } from './BusinessList';
@@ -21,7 +20,6 @@ export default function PlaceList() {
     });
 
     const title = categoryData?.data?.name ?? 'Things to do in Doon';
-    useMeta({ title, description: 'Attractions, nature spots, heritage and places to explore in Dehradun.' });
 
     return (
         <>

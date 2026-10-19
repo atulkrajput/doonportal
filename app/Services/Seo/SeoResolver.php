@@ -132,21 +132,21 @@ class SeoResolver
         $page->jsonLd = [
             [
                 '@type' => 'WebSite',
-                '@id' => url('/').'#website',
+                '@id' => self::absoluteUrl('/').'#website',
                 'name' => $this->seo['site_name'],
-                'url' => url('/'),
+                'url' => self::absoluteUrl('/'),
                 'potentialAction' => [
                     '@type' => 'SearchAction',
-                    'target' => ['@type' => 'EntryPoint', 'urlTemplate' => url('/search').'?q={search_term_string}'],
+                    'target' => ['@type' => 'EntryPoint', 'urlTemplate' => self::absoluteUrl('/search').'?q={search_term_string}'],
                     'query-input' => 'required name=search_term_string',
                 ],
             ],
             array_filter([
                 '@type' => 'Organization',
-                '@id' => url('/').'#organization',
+                '@id' => self::absoluteUrl('/').'#organization',
                 'name' => $this->seo['site_name'],
-                'url' => url('/'),
-                'logo' => url('/favicon.svg'),
+                'url' => self::absoluteUrl('/'),
+                'logo' => self::absoluteUrl('/favicon.svg'),
                 'sameAs' => $sameAs ?: null,
             ]),
         ];
@@ -169,7 +169,7 @@ class SeoResolver
 
         $crumbs = $crumbs ?: [[$title, $path]];
         $page->jsonLd = [
-            ['@type' => 'CollectionPage', 'name' => $title, 'url' => url($path), 'description' => $page->description],
+            ['@type' => 'CollectionPage', 'name' => $title, 'url' => self::absoluteUrl($path), 'description' => $page->description],
             $this->breadcrumbs($crumbs),
         ];
 
@@ -214,10 +214,10 @@ class SeoResolver
             $page->jsonLd = [
                 array_filter([
                     '@type' => 'LocalBusiness',
-                    '@id' => url("/business/{$slug}").'#business',
+                    '@id' => self::absoluteUrl("/business/{$slug}").'#business',
                     'name' => $b->name,
                     'description' => $b->description ? Str::limit(strip_tags($b->description), 500) : null,
-                    'url' => url("/business/{$slug}"),
+                    'url' => self::absoluteUrl("/business/{$slug}"),
                     'telephone' => $b->phone,
                     'sameAs' => $b->website ? [$b->website] : null,
                     'image' => $page->image,
@@ -259,7 +259,7 @@ class SeoResolver
                     '@type' => 'TouristAttraction',
                     'name' => $p->name,
                     'description' => $p->description ? Str::limit(strip_tags($p->description), 500) : $p->summary,
-                    'url' => url("/place/{$slug}"),
+                    'url' => self::absoluteUrl("/place/{$slug}"),
                     'image' => $page->image,
                     'isAccessibleForFree' => $p->is_free,
                     'geo' => $p->latitude !== null ? ['@type' => 'GeoCoordinates', 'latitude' => $p->latitude, 'longitude' => $p->longitude] : null,
@@ -290,7 +290,7 @@ class SeoResolver
                     '@type' => 'Event',
                     'name' => $e->title,
                     'description' => $e->description ? Str::limit(strip_tags($e->description), 500) : $e->summary,
-                    'url' => url("/event/{$slug}"),
+                    'url' => self::absoluteUrl("/event/{$slug}"),
                     'image' => $page->image,
                     'startDate' => $e->starts_at?->copy()->setTimezone($tz)->toIso8601String(),
                     'endDate' => $e->ends_at?->copy()->setTimezone($tz)->toIso8601String(),
@@ -345,13 +345,13 @@ class SeoResolver
                     '@type' => $s->type === StoryType::News ? 'NewsArticle' : 'Article',
                     'headline' => Str::limit($s->title, 110, ''),
                     'description' => $page->description,
-                    'url' => url($path),
-                    'mainEntityOfPage' => url($path),
+                    'url' => self::absoluteUrl($path),
+                    'mainEntityOfPage' => self::absoluteUrl($path),
                     'image' => $page->image,
                     'datePublished' => $s->published_at?->toIso8601String(),
                     'dateModified' => $s->updated_at?->toIso8601String(),
                     'author' => $s->author ? ['@type' => 'Person', 'name' => $s->author->name] : ['@type' => 'Organization', 'name' => $this->seo['site_name']],
-                    'publisher' => ['@type' => 'Organization', 'name' => $this->seo['site_name'], 'logo' => ['@type' => 'ImageObject', 'url' => url('/favicon.svg')]],
+                    'publisher' => ['@type' => 'Organization', 'name' => $this->seo['site_name'], 'logo' => ['@type' => 'ImageObject', 'url' => self::absoluteUrl('/favicon.svg')]],
                 ]),
                 $this->breadcrumbs([['Stories', '/stories'], [$s->title, $path]]),
             ];
@@ -370,7 +370,7 @@ class SeoResolver
         $page = $this->entityPage($c, $c->title, $c->description, "/collection/{$slug}", 'website', $c->cover);
         if (! $c->isDemo()) {
             $page->jsonLd = [
-                ['@type' => 'CollectionPage', 'name' => $c->title, 'url' => url("/collection/{$slug}"), 'description' => $page->description],
+                ['@type' => 'CollectionPage', 'name' => $c->title, 'url' => self::absoluteUrl("/collection/{$slug}"), 'description' => $page->description],
                 $this->breadcrumbs([['Best of Doon', '/collections'], [$c->title, "/collection/{$slug}"]]),
             ];
         }
@@ -391,7 +391,7 @@ class SeoResolver
             array_filter([
                 '@type' => 'Place',
                 'name' => "{$a->name}, Dehradun",
-                'url' => url("/area/{$slug}"),
+                'url' => self::absoluteUrl("/area/{$slug}"),
                 'description' => $page->description,
                 'geo' => $a->latitude !== null ? ['@type' => 'GeoCoordinates', 'latitude' => $a->latitude, 'longitude' => $a->longitude] : null,
             ]),
@@ -428,7 +428,7 @@ class SeoResolver
         return new SeoPage(
             title: Str::limit($fullTitle, 120, ''),
             description: $description,
-            canonical: url($path),
+            canonical: self::absoluteUrl($path),
             robots: $override?->noindex ? 'noindex,follow' : $robots,
             type: $type,
             image: $this->absolute($imageMedia?->url()),
@@ -442,7 +442,7 @@ class SeoResolver
         return new SeoPage(
             title: str_replace('%s', 'Page not found', $this->seo['title_template']),
             description: $this->seo['default_description'],
-            canonical: url($path),
+            canonical: self::absoluteUrl($path),
             robots: 'noindex,follow',
             status: 404,
             siteName: $this->seo['site_name'],
@@ -467,7 +467,7 @@ class SeoResolver
             return null;
         }
 
-        return preg_match('#^https?://#', $url) ? $url : url($url);
+        return preg_match('#^https?://#', $url) ? $url : self::absoluteUrl($url);
     }
 
     /**
@@ -484,8 +484,14 @@ class SeoResolver
                 '@type' => 'ListItem',
                 'position' => $i + 1,
                 'name' => $item[0],
-                'item' => url($item[1]),
+                'item' => self::absoluteUrl($item[1]),
             ], $list, array_keys($list)),
         ];
+    }
+
+    /** Absolute URL; the site root keeps its trailing slash (https://host/). */
+    public static function absoluteUrl(string $path): string
+    {
+        return $path === '/' ? rtrim(url('/'), '/').'/' : url($path);
     }
 }

@@ -1,6 +1,5 @@
 import { Link } from 'react-router';
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import SearchBox from '../components/SearchBox';
 import { Section } from '../components/Listing';
 import { BusinessCard, CardGrid, CollectionCard, EventCard, PlaceCard, StoryCard } from '../components/Cards';
@@ -94,7 +93,6 @@ function MapPreview({ markers }) {
 }
 
 export default function Home() {
-    useMeta({});
     const { data, loading, error } = useApi('/home');
     const home = data?.data;
 

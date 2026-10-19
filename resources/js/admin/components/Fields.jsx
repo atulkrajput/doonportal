@@ -309,7 +309,7 @@ export function Input({ field, value, onChange, id, disabled }) {
                     min="0"
                     step="0.01"
                     className="input"
-                    value={value == null ? '' : value / 100}
+                    value={value == null || value === '' ? '' : value / 100}
                     onChange={(e) => onChange(e.target.value === '' ? null : Math.round(Number(e.target.value) * 100))}
                     disabled={disabled}
                 />

@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { Icon } from './Icons';
 import { Logo } from './Brand';
+import { SOCIAL_PROFILES, siteConfig } from '../lib/site';
 import { isStaff } from '../admin/lib';
 
 const NAV = [
@@ -105,6 +106,8 @@ function MobileNav() {
 }
 
 function Footer() {
+    const profiles = siteConfig().social || {};
+    const social = SOCIAL_PROFILES.filter(([key]) => profiles[key]);
     const columns = [
         ['Discover', [['/places', 'Things to do'], ['/businesses/food-drink', 'Eat'], ['/businesses/shopping', 'Shop'], ['/services', 'Services'], ['/events', 'Events']]],
         ['Doon', [['/areas', 'Areas'], ['/stories', 'Stories'], ['/collections', 'Best of Doon'], ['/explore', 'All categories']]],
@@ -118,6 +121,26 @@ function Footer() {
                     <Logo light />
                     <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-navy-200">Discover. Connect. Belong.</p>
                     <p className="mt-3 font-script text-2xl leading-tight text-accent-400">Local stories. Real connections.</p>
+                    {social.length > 0 && (
+                        <div className="mt-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-white">Follow us</p>
+                            <ul className="mt-2 flex gap-2">
+                                {social.map(([key, label, icon]) => (
+                                    <li key={key}>
+                                        <a
+                                            href={profiles[key]}
+                                            target="_blank"
+                                            rel="noopener noreferrer me"
+                                            aria-label={`DoonPortal on ${label}`}
+                                            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-navy-900 transition-colors hover:bg-accent-500 hover:text-white"
+                                        >
+                                            <Icon name={icon} size={18} />
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
                 {columns.map(([heading, links]) => (
                     <div key={heading}>

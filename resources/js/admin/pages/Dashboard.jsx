@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { useApi } from '../../hooks/useApi';
 import { ErrorState, PageLoading } from '../../components/States';
-import { formatDateTime, humanize } from '../lib';
+import { formatDateTime, formatMoney, formatNumber, humanize } from '../lib';
 
 function Card({ title, to, total, children }) {
     return (
@@ -93,6 +93,16 @@ export default function Dashboard() {
                     </Card>
                 )}
                 {d.users && <Card title="Users" to="/admin/users" total={d.users.total} />}
+                {d.monetization && (
+                    <Card title="Revenue this month" to="/admin/revenue" total={formatMoney(d.monetization.revenue_this_month_paise)}>
+                        <p className="text-sm text-stone-600">{d.monetization.active_subscriptions} active subscriptions · recorded payments</p>
+                    </Card>
+                )}
+                {d.traffic && (
+                    <Card title="Traffic, last 7 days" to="/admin/analytics" total={formatNumber(d.traffic.page_views_7d)}>
+                        <p className="text-sm text-stone-600">page views · {formatNumber(d.traffic.visitors_7d)} visitor-days</p>
+                    </Card>
+                )}
                 {d.moderation && (
                     <Card title="Moderation queues">
                         <ul className="mt-2 space-y-1 text-sm">

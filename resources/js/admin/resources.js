@@ -1,4 +1,4 @@
-import { PERMISSIONS } from './lib';
+import { PERMISSIONS, humanize } from './lib';
 
 /**
  * Declarative description of each CMS resource: API path, permission, list
@@ -32,7 +32,75 @@ const nameColumn = (key = 'name') => ({ key, label: key === 'title' ? 'Title' : 
 const statusColumn = { key: 'status', label: 'Status', status: true };
 const updatedColumn = { key: 'updated_at', label: 'Updated', datetime: true };
 
+const PAYMENT_METHODS = ['UPI', 'BANK_TRANSFER', 'CARD', 'CASH', 'CHEQUE', 'COMPLIMENTARY', 'OTHER'];
+
 export const RESOURCES = {
+    plans: {
+        label: 'Plans',
+        singular: 'Plan',
+        type: 'plan',
+        permission: PERMISSIONS.monetization,
+        titleKey: 'name',
+        filters: ['is_published', 'trashed'],
+        publishedLabel: 'Active or not',
+        intro: 'Listing plans businesses can subscribe to. Prices are shown in rupees and stored in paise.',
+        columns: [
+            nameColumn(),
+            { key: 'price_paise', label: 'Price', money: true },
+            { key: 'interval', label: 'Billing' },
+            { key: 'is_active', label: 'Active', boolean: true },
+            { key: 'active_subscriptions_count', label: 'Active subs' },
+        ],
+        fields: [
+            { name: 'name', label: 'Name', type: 'text', required: true },
+            { name: 'slug', label: 'Slug', type: 'text' },
+            { name: 'price_paise', label: 'Price (₹)', type: 'money', required: true },
+            { name: 'interval', label: 'Billing interval', type: 'select', required: true, options: [['MONTH', 'Monthly'], ['YEAR', 'Yearly'], ['ONE_TIME', 'One-time']] },
+            { name: 'description', label: 'Description', type: 'textarea', span: 'full' },
+            { name: 'features', label: 'Features', type: 'tags', span: 'full', help: 'Comma-separated, e.g. Featured badge, Top of category' },
+            { name: 'is_active', label: 'Available for new subscriptions', type: 'checkbox' },
+            { name: 'sort_order', label: 'Sort order', type: 'number' },
+        ],
+        defaults: { interval: 'MONTH', is_active: true },
+    },
+
+    subscriptions: {
+        label: 'Subscriptions',
+        singular: 'Subscription',
+        type: 'subscription',
+        permission: PERMISSIONS.monetization,
+        titleKey: 'id',
+        recordTitle: (r) => `${r.business?.name ?? 'Business'} — ${r.plan?.name ?? 'Plan'}`,
+        noDelete: true,
+        statuses: ['PENDING', 'ACTIVE', 'CANCELLED', 'EXPIRED'],
+        filters: ['status'],
+        searchPlaceholder: 'Business name…',
+        sorts: [['starts_at', 'Start date'], ['oldest', 'Oldest'], ['updated', 'Recently updated']],
+        intro: 'Record subscriptions and the payments you receive (UPI, bank transfer…). Only entries with an amount and a paid date count as revenue. There is no online payment gateway yet.',
+        columns: [
+            { key: 'business.name', label: 'Business', primary: true },
+            { key: 'plan.name', label: 'Plan' },
+            statusColumn,
+            { key: 'starts_on', label: 'Starts', date: true },
+            { key: 'ends_on', label: 'Ends', date: true },
+            { key: 'amount_paise', label: 'Amount', money: true },
+            { key: 'paid_at', label: 'Paid', datetime: true },
+        ],
+        fields: [
+            { name: 'business_id', label: 'Business', type: 'relation', required: true, relation: { endpoint: '/admin/businesses', label: 'name' } },
+            { name: 'plan_id', label: 'Plan', type: 'relation', required: true, relation: { endpoint: '/admin/plans', label: 'name' } },
+            { name: 'status', label: 'Status', type: 'select', options: [['PENDING', 'Pending'], ['ACTIVE', 'Active'], ['CANCELLED', 'Cancelled'], ['EXPIRED', 'Expired']] },
+            { name: 'starts_on', label: 'Starts on', type: 'date', required: true },
+            { name: 'ends_on', label: 'Ends on', type: 'date', help: 'Blank = one billing period from the start (set automatically).' },
+            { name: 'amount_paise', label: 'Amount (₹)', type: 'money', help: 'Blank = the plan price.' },
+            { name: 'payment_method', label: 'Payment method', type: 'select', options: [['', '—'], ...PAYMENT_METHODS.map((m) => [m, humanize(m)])] },
+            { name: 'paid_at', label: 'Paid at (IST)', type: 'datetime', help: 'Leave blank until the money is received.' },
+            { name: 'payment_reference', label: 'Payment reference', type: 'text', help: 'UPI transaction ID, cheque number…' },
+            { name: 'notes', label: 'Notes', type: 'textarea', span: 'full' },
+        ],
+        defaults: { status: 'PENDING' },
+    },
+
     businesses: {
         label: 'Businesses',
         singular: 'Business',
@@ -346,9 +414,3 @@ export const RESOURCES = {
     },
 };
 
-/** Sidebar order. */
-export const NAV = [
-    ['businesses', 'places', 'events', 'venues', 'organizers'],
-    ['stories', 'collections'],
-    ['areas', 'categories'],
-];

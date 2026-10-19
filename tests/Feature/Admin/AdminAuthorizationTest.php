@@ -29,13 +29,22 @@ class AdminAuthorizationTest extends AdminTestCase
         'media' => ['admin/media', 'content'],
         'users' => ['admin/users', 'users'],
         'audit-logs' => ['admin/audit-logs', 'audit'],
+        'analytics' => ['admin/analytics', 'analytics'],
+        'plans' => ['admin/plans', 'monetization'],
+        'subscriptions' => ['admin/subscriptions', 'monetization'],
+        'revenue' => ['admin/revenue', 'monetization'],
+        'seo' => ['admin/seo', 'seo'],
+        'seo-audit' => ['admin/seo/audit', 'seo'],
+        'settings-seo' => ['admin/settings/seo', 'seo'],
+        'settings-social' => ['admin/settings/social', 'settings'],
+        'settings-tracking' => ['admin/settings/tracking', 'settings'],
     ];
 
     /** Which permission groups each role holds (mirrors RoleName::permissions()). */
     private const ACCESS = [
-        'SUPER_ADMIN' => ['businesses', 'places', 'events', 'stories', 'collections', 'taxonomy', 'content', 'users', 'audit'],
-        'ADMIN' => ['businesses', 'places', 'events', 'stories', 'collections', 'taxonomy', 'content', 'users', 'audit'],
-        'EDITOR' => ['businesses', 'places', 'events', 'stories', 'collections', 'taxonomy', 'content'],
+        'SUPER_ADMIN' => ['businesses', 'places', 'events', 'stories', 'collections', 'taxonomy', 'content', 'users', 'audit', 'analytics', 'monetization', 'seo', 'settings'],
+        'ADMIN' => ['businesses', 'places', 'events', 'stories', 'collections', 'taxonomy', 'content', 'users', 'audit', 'analytics', 'monetization', 'seo', 'settings'],
+        'EDITOR' => ['businesses', 'places', 'events', 'stories', 'collections', 'taxonomy', 'content', 'analytics', 'seo'],
         'MODERATOR' => [],
         'BUSINESS_OWNER' => null,
         'CONTRIBUTOR' => null,
@@ -90,6 +99,9 @@ class AdminAuthorizationTest extends AdminTestCase
             ['postJson', '/api/v1/admin/collections', ['title' => 'Matrix Collection'], 'collections', 201],
             ['postJson', '/api/v1/admin/areas', ['name' => 'Matrix Area'], 'taxonomy', 201],
             ['postJson', '/api/v1/admin/categories', ['name' => 'Matrix Cat', 'type' => 'business'], 'taxonomy', 201],
+            ['putJson', '/api/v1/admin/settings/seo', ['site_name' => 'DoonPortal', 'title_template' => '%s | DoonPortal', 'home_title' => 'Home', 'home_description' => 'Home page', 'default_description' => 'Default', 'allow_indexing' => true], 'seo', 200],
+            ['putJson', '/api/v1/admin/settings/tracking', ['ga4_measurement_id' => 'G-MATRIX12'], 'settings', 200],
+            ['postJson', '/api/v1/admin/plans', ['name' => 'Matrix Plan', 'price_paise' => 49900, 'interval' => 'MONTH'], 'monetization', 201],
             ['deleteJson', "/api/v1/admin/businesses/{$business->id}", [], 'businesses', 204],
         ];
 

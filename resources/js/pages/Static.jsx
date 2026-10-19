@@ -1,11 +1,9 @@
 import { Link } from 'react-router';
 import { useAuth } from '../context/AuthContext';
-import { useMeta } from '../hooks/useMeta';
 import { PageHeader } from '../components/Listing';
 import { EmptyState } from '../components/States';
 
 export function Saved() {
-    useMeta({ title: 'My DoonPortal' });
     const { user, ready, logout } = useAuth();
 
     if (!ready) {
@@ -35,7 +33,6 @@ export function Saved() {
 }
 
 export function BusinessPortal() {
-    useMeta({ title: 'List your business', description: 'Add or claim your Dehradun business on DoonPortal.' });
     return (
         <>
             <PageHeader eyebrow="For business" title="Your business on DoonPortal">
@@ -75,7 +72,6 @@ const INFO = {
 
 export function InfoPage({ page }) {
     const [title, body] = INFO[page];
-    useMeta({ title });
     return (
         <>
             <PageHeader title={title} />

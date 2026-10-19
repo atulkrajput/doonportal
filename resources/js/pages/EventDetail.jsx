@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { track } from '../lib/analytics';
 import { directionsHref, formatEventDate, priceLabel } from '../lib/format';
 import { CardGrid, Cover, EventCard } from '../components/Cards';
 import { DemoBadge } from '../components/Badges';
-import { Breadcrumbs, DetailGate, InfoRow, breadcrumbJsonLd } from '../components/Detail';
+import { Breadcrumbs, DetailGate, InfoRow } from '../components/Detail';
 import { Icon } from '../components/Icons';
 
 function EventView({ event }) {
@@ -17,30 +16,6 @@ function EventView({ event }) {
     useEffect(() => {
         track('event_viewed', { type: 'event', id: event.id });
     }, [event.id]);
-
-    useMeta({
-        title: event.title,
-        description: event.summary,
-        jsonLd: event.is_demo
-            ? null
-            : {
-                  '@context': 'https://schema.org',
-                  '@graph': [
-                      {
-                          '@type': 'Event',
-                          name: event.title,
-                          startDate: event.starts_at,
-                          ...(event.ends_at ? { endDate: event.ends_at } : {}),
-                          eventStatus: event.is_cancelled ? 'https://schema.org/EventCancelled' : event.is_rescheduled ? 'https://schema.org/EventRescheduled' : 'https://schema.org/EventScheduled',
-                          ...(event.description ? { description: event.description } : {}),
-                          ...(event.venue ? { location: { '@type': 'Place', name: event.venue.name, address: event.venue.address ?? 'Dehradun' } } : {}),
-                          ...(event.organizer ? { organizer: { '@type': 'Organization', name: event.organizer.name } } : {}),
-                          ...(event.price.is_free ? { isAccessibleForFree: true } : {}),
-                      },
-                      breadcrumbJsonLd(crumbs),
-                  ],
-              },
-    });
 
     return (
         <article>

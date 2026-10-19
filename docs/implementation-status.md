@@ -4,7 +4,7 @@ _Last updated: 2026-10-19 · Branch `claude/phase3-admin-cms` (built on `claude/
 
 ## Summary
 
-Phases 0–3 are **VERIFIED**: 106 PHPUnit tests (775 assertions) pass on SQLite and on MariaDB 10.4 (`DB_CONNECTION=mysql DB_DATABASE=doonportal_test php vendor/bin/phpunit`); `vendor/bin/pint --test`, `npm run lint` and `npm run build` pass. Phases 0–2 were browser-checked at 1280px and 375px. Phase 3's admin UI was browser-checked (desktop and 375px) against a separate local database with demo data, signed in as EDITOR and ADMIN test accounts: login redirect, permission-filtered navigation, list filters, business edit round-trip, business status change, event date locking + reschedule panel, collection item picker, story linked entities, user role editor (locked for administrators / self), audit log diff view, dashboard.
+Phases 0–3 are **VERIFIED**: 118 PHPUnit tests (1033 assertions) pass on SQLite and on MariaDB 10.4 (`DB_CONNECTION=mysql DB_DATABASE=doonportal_test php vendor/bin/phpunit`); `vendor/bin/pint --test`, `npm run lint` and `npm run build` pass. Phases 0–2 were browser-checked at 1280px and 375px. Phase 3's admin UI was browser-checked (desktop and 375px) against a separate local database with demo data, signed in as EDITOR and ADMIN test accounts: login redirect, permission-filtered navigation, list filters, business edit round-trip, business status change, event date locking + reschedule panel, collection item picker, story linked entities, user role editor (locked for administrators / self), audit log diff view, dashboard.
 
 ## Task ledger
 
@@ -38,6 +38,12 @@ Phases 0–3 are **VERIFIED**: 106 PHPUnit tests (775 assertions) pass on SQLite
 | P3-7 | Server-side HTML sanitizer for story bodies | — | VERIFIED | `HtmlSanitizer` (symfony/html-sanitizer) | HtmlSanitizerTest (12), EditorialAdminTest |
 | P3-8 | Audit-log listing (filters) and dashboard counts | P3-4 | VERIFIED | `Admin/AuditLogController`, `Admin/DashboardController` | MediaAuditDashboardTest |
 | P3-10 | Change password for the signed-in user (`PUT /me/password`) + admin "My account" page | P0-3 | VERIFIED | `MeController::updatePassword`, `ChangePasswordRequest`, `resources/js/admin/pages/Account.jsx` | ChangePasswordTest (3), browser check |
+| P3-11 | Admin redesign: grouped, collapsible left menu (Overview, Directory, Events, Content, Monetization, Marketing & SEO, Administration), permission-filtered, mobile drawer | P3-9 | VERIFIED | `resources/js/admin/menu.js`, `AdminApp.jsx` | lint, build, browser (desktop + 375px) |
+| P3-12 | Server-rendered SEO for every public URL, real 404s, canonical 301s, `/robots.txt`, `/sitemap.xml`, `/api/v1/seo` + client `SeoManager` | P2 | VERIFIED | `Services/Seo/*`, `SpaController`, `SeoFilesController`, `components/SeoManager.jsx` | SpaRoutingTest (8) |
+| P3-13 | SEO management: settings, page/record overrides, preview, audit; Search & sharing panel on record edit screens | P3-12 | VERIFIED | `Admin/SeoController`, `Admin/SettingsController`, `SiteSettings`, `admin/pages/Seo.jsx`, `components/SeoBits.jsx` | MarketingAdminTest |
+| P3-14 | Social media profiles (footer + sameAs) and tracking codes (GA4, GTM, Meta Pixel, Clarity, Google/Bing verification) | P3-12 | VERIFIED | `SiteSettings`, `app.blade.php`, `admin/pages/Settings.jsx` | MarketingAdminTest, SpaRoutingTest |
+| P3-15 | Monetization (manual): plans, subscriptions, revenue report; dashboard cards | P3-1 | VERIFIED | `Plan`, `Subscription`, `Admin/PlanController`, `Admin/SubscriptionController`, `Admin/RevenueController`, `admin/pages/Revenue.jsx` | MarketingAdminTest |
+| P3-16 | First-party analytics report + `page_view` tracking | P2-3 | VERIFIED | `Admin/AnalyticsReportController`, `admin/pages/Analytics.jsx` | MarketingAdminTest |
 | P3-9 | React admin under `/admin` (lazy chunk): guard from `/auth/me`, dashboard, list/edit screens with filters + pagination for all CMS resources, status/reschedule/items panels, media library, users & roles, audit log | P3-1–8 | VERIFIED | `resources/js/admin/*`, `main.jsx`, `Layout.jsx`, `pages/Auth.jsx` (`?next=`) | lint, build, browser check |
 
 ## Known issues / limitations
@@ -52,6 +58,9 @@ Phases 0–3 are **VERIFIED**: 106 PHPUnit tests (775 assertions) pass on SQLite
 | Low | Admin relation selects (areas, categories, venues, organizers, linked business/place) load the first 100 options; a searchable picker is needed once any list grows past that (the UI says when it is truncated). |
 | Low | Uploaded images are stored as-is (no resizing, re-encoding or EXIF stripping — GD/Imagick not available locally). |
 | Low | Business sub-records (hours, services, social links, facilities, story links) are replaced wholesale on save; fine for admin editing, revisit if owners edit concurrently (Phase 4). |
+| Medium | Enabling third-party tracking needs a cookie-consent banner and privacy-policy text first (not built). |
+| Low | Page bodies are still rendered client-side; metadata, status codes and structured data are server-side. Full prerendering remains a Phase 9 item. |
+| Low | Revenue is from manually recorded payments; there is no payment gateway, invoicing or GST handling yet (Phase 8). |
 | Info | Story bodies are edited as raw HTML (sanitized on save, preview shown after saving); a rich-text editor is a Phase 6 item. |
 | Info | Local XAMPP PHP has no CA bundle that trusts Norton's TLS scanning; `composer require` needed `COMPOSER_CAFILE` pointing at a bundle that includes the Norton root. |
 | Info | Skeleton Laravel workflows (`issues.yml`, `pull-requests.yml`, `update-changelog.yml`) and `CHANGELOG.md` remain from the starter; remove if unused. |

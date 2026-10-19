@@ -1,5 +1,4 @@
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { CollectionCard } from '../components/Cards';
 import { PageHeader, ResultsGrid, useUrlFilters } from '../components/Listing';
 import { EmptyState } from '../components/States';
@@ -7,7 +6,6 @@ import { EmptyState } from '../components/States';
 export default function CollectionList() {
     const filters = useUrlFilters();
     const state = useApi('/collections', { page: filters.get('page') });
-    useMeta({ title: 'Best of Doon', description: 'Curated lists of Dehradun’s cafes, restaurants, places and more.' });
 
     return (
         <>

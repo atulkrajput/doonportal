@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { track } from '../lib/analytics';
 import { DAYS, directionsHref, formatDate, formatPaise, priceRange, telHref, whatsappHref } from '../lib/format';
 import { BusinessCard, CardGrid, Cover } from '../components/Cards';
 import { DemoBadge, OpenBadge, Rating, VerifiedBadge } from '../components/Badges';
-import { Breadcrumbs, DetailGate, InfoRow, Provenance, breadcrumbJsonLd } from '../components/Detail';
+import { Breadcrumbs, DetailGate, InfoRow, Provenance } from '../components/Detail';
 import { Icon } from '../components/Icons';
 import { EmptyState } from '../components/States';
 
@@ -105,28 +104,6 @@ function BusinessView({ business }) {
     useEffect(() => {
         track('business_viewed', { type: 'business', id: business.id });
     }, [business.id]);
-
-    // Structured data only from fields we actually hold; no ratings for demo or unrated listings.
-    const jsonLd = business.is_demo
-        ? null
-        : {
-              '@context': 'https://schema.org',
-              '@graph': [
-                  {
-                      '@type': 'LocalBusiness',
-                      name: business.name,
-                      ...(business.description ? { description: business.description } : {}),
-                      ...(business.contact.phone ? { telephone: business.contact.phone } : {}),
-                      ...(business.contact.website ? { url: business.contact.website } : {}),
-                      address: { '@type': 'PostalAddress', streetAddress: business.address.line ?? undefined, addressLocality: business.address.city, postalCode: business.address.pincode ?? undefined, addressCountry: 'IN' },
-                      ...(business.location ? { geo: { '@type': 'GeoCoordinates', latitude: business.location.lat, longitude: business.location.lng } } : {}),
-                      ...(business.rating.count ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: business.rating.average, reviewCount: business.rating.count } } : {}),
-                  },
-                  breadcrumbJsonLd(crumbs),
-              ],
-          };
-
-    useMeta({ title: business.name, description: business.tagline || business.description?.slice(0, 155), jsonLd });
 
     return (
         <article>

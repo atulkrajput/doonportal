@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { track } from '../lib/analytics';
 import { directionsHref, formatPaise } from '../lib/format';
 import { CardGrid, Cover, PlaceCard } from '../components/Cards';
 import { DemoBadge, Rating } from '../components/Badges';
-import { Breadcrumbs, DetailGate, InfoRow, Provenance, breadcrumbJsonLd } from '../components/Detail';
+import { Breadcrumbs, DetailGate, InfoRow, Provenance } from '../components/Detail';
 import { Icon } from '../components/Icons';
 
 function entryText(entry) {
@@ -28,26 +27,6 @@ function PlaceView({ place }) {
     useEffect(() => {
         track('place_viewed', { type: 'place', id: place.id });
     }, [place.id]);
-
-    useMeta({
-        title: place.name,
-        description: place.summary,
-        jsonLd: place.is_demo
-            ? null
-            : {
-                  '@context': 'https://schema.org',
-                  '@graph': [
-                      {
-                          '@type': 'TouristAttraction',
-                          name: place.name,
-                          ...(place.description ? { description: place.description } : {}),
-                          ...(place.location ? { geo: { '@type': 'GeoCoordinates', latitude: place.location.lat, longitude: place.location.lng } } : {}),
-                          ...(place.entry.is_free != null ? { isAccessibleForFree: place.entry.is_free } : {}),
-                      },
-                      breadcrumbJsonLd(crumbs),
-                  ],
-              },
-    });
 
     const fee = entryText(place.entry);
 

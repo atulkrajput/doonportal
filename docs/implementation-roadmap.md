@@ -12,8 +12,8 @@ Live status per task: [implementation-status.md](implementation-status.md).
 | 5 | Community & reviews | NOT_STARTED | 3 (moderation) |
 | 6 | Stories, New in Doon, Best of Doon (editorial workflow) | NOT_STARTED | 3 |
 | 7 | Doon Map | NOT_STARTED | 2 |
-| 8 | Monetization | NOT_STARTED | 4 |
-| 9 | SEO, performance, analytics | NOT_STARTED | 2 |
+| 8 | Monetization | PARTIAL (plans, manual subscriptions, revenue report) | 4 |
+| 9 | SEO, performance, analytics | PARTIAL (server-side metadata, sitemap, robots, SEO admin, first-party analytics, tracking codes) | 2 |
 | 10 | Search & recommendations | NOT_STARTED | 2, 5 |
 | 11 | Notifications & PWA | NOT_STARTED | 5 |
 | 12 | Security hardening | NOT_STARTED | 3–8 |

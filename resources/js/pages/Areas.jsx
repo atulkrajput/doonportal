@@ -1,6 +1,5 @@
 import { Link, useParams } from 'react-router';
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { BusinessCard, CardGrid, EventCard, PlaceCard, StoryCard } from '../components/Cards';
 import { Breadcrumbs, DetailGate } from '../components/Detail';
 import { PageHeader, Section } from '../components/Listing';
@@ -9,7 +8,6 @@ import { Icon } from '../components/Icons';
 
 export function AreaList() {
     const { data, loading, error } = useApi('/areas');
-    useMeta({ title: 'Areas of Dehradun', description: 'Explore Dehradun neighbourhood by neighbourhood.' });
 
     return (
         <>
@@ -62,7 +60,6 @@ function AreaBlock({ path, title, to, render, grid = true }) {
 }
 
 function AreaView({ area }) {
-    useMeta({ title: `${area.name}, Dehradun`, description: area.summary || `Businesses, places, events and stories in ${area.name}, Dehradun.` });
 
     return (
         <>

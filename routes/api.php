@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\PlaceController;
 use App\Http\Controllers\Api\V1\SearchController;
+use App\Http\Controllers\Api\V1\SeoController;
 use App\Http\Controllers\Api\V1\StoryController;
 use Illuminate\Support\Facades\Route;
 
@@ -43,6 +44,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     // Public discovery
     Route::get('home', HomeController::class)->name('home');
     Route::get('search', SearchController::class)->name('search');
+    Route::get('seo', SeoController::class)->name('seo');
 
     Route::controller(BusinessController::class)->prefix('businesses')->name('businesses.')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -140,5 +142,43 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::get('audit-logs', [Admin\AuditLogController::class, 'index'])
             ->middleware('can:'.PermissionName::ViewAuditLogs->value)->name('audit-logs.index');
+
+        // Monetization: plans, recorded subscriptions and revenue.
+        Route::middleware('can:'.PermissionName::ManageMonetization->value)->group(function () {
+            Route::controller(Admin\PlanController::class)->prefix('plans')->name('plans.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::get('{plan:id}', 'show')->name('show')->withTrashed();
+                Route::patch('{plan:id}', 'update')->name('update');
+                Route::delete('{plan:id}', 'destroy')->name('destroy');
+                Route::post('{plan:id}/restore', 'restore')->name('restore')->withTrashed();
+            });
+            Route::controller(Admin\SubscriptionController::class)->prefix('subscriptions')->name('subscriptions.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::get('{subscription:id}', 'show')->name('show');
+                Route::patch('{subscription:id}', 'update')->name('update');
+            });
+            Route::get('revenue', Admin\RevenueController::class)->name('revenue');
+        });
+
+        Route::get('analytics', Admin\AnalyticsReportController::class)
+            ->middleware('can:'.PermissionName::ViewAnalytics->value)->name('analytics');
+
+        // SEO overrides, preview and audit.
+        Route::controller(Admin\SeoController::class)->prefix('seo')->name('seo.')
+            ->middleware('can:'.PermissionName::ManageSeo->value)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::get('preview', 'preview')->name('preview');
+                Route::get('audit', 'audit')->name('audit');
+                Route::get('entity/{type}/{id}', 'forEntity')->name('entity');
+                Route::patch('{seoMeta:id}', 'update')->name('update');
+                Route::delete('{seoMeta:id}', 'destroy')->name('destroy');
+            });
+
+        // Settings groups: seo (seo.manage), social and tracking (settings.manage) — checked per group.
+        Route::get('settings/{group}', [Admin\SettingsController::class, 'show'])->whereIn('group', ['seo', 'social', 'tracking'])->name('settings.show');
+        Route::put('settings/{group}', [Admin\SettingsController::class, 'update'])->whereIn('group', ['seo', 'social', 'tracking'])->name('settings.update');
     });
 });

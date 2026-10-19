@@ -7,8 +7,10 @@ use App\Enums\PermissionName;
 use App\Enums\ReportStatus;
 use App\Enums\ReviewStatus;
 use App\Enums\SubmissionStatus;
+use App\Enums\SubscriptionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AuditLogResource;
+use App\Models\AnalyticsEvent;
 use App\Models\Area;
 use App\Models\AuditLog;
 use App\Models\Business;
@@ -21,6 +23,7 @@ use App\Models\Report;
 use App\Models\Review;
 use App\Models\Story;
 use App\Models\Submission;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -66,6 +69,20 @@ class DashboardController extends Controller
         }
         if ($can(PermissionName::ManageUsers)) {
             $data['users'] = ['total' => User::count()];
+        }
+        if ($can(PermissionName::ManageMonetization)) {
+            $monthStart = now('Asia/Kolkata')->startOfMonth()->utc();
+            $data['monetization'] = [
+                'active_subscriptions' => Subscription::where('status', SubscriptionStatus::Active->value)->count(),
+                'revenue_this_month_paise' => (int) Subscription::whereNotNull('paid_at')->where('paid_at', '>=', $monthStart)->sum('amount_paise'),
+            ];
+        }
+        if ($can(PermissionName::ViewAnalytics)) {
+            $since = now('Asia/Kolkata')->subDays(6)->startOfDay()->utc();
+            $data['traffic'] = [
+                'page_views_7d' => AnalyticsEvent::where('name', 'page_view')->where('created_at', '>=', $since)->count(),
+                'visitors_7d' => AnalyticsEvent::where('created_at', '>=', $since)->whereNotNull('session_hash')->distinct()->count('session_hash'),
+            ];
         }
 
         $queues = array_filter([

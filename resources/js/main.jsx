@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout';
+import SeoManager from './components/SeoManager';
 import Home from './pages/Home';
 import Search from './pages/Search';
 import BusinessList from './pages/BusinessList';
@@ -23,7 +24,54 @@ import NotFound from './pages/NotFound';
 import { PageLoading } from './components/States';
 
 // Staff-only code is split into its own chunk and never loaded by public visitors.
-const AdminApp = lazy(() => import('./admin/AdminApp'));
+const AdminApp = lazy(() => loadChunk(() => import('./admin/AdminApp')));
+
+/**
+ * A chunk can fail to load after a deploy (old file names) or a network blip.
+ * Retry once, then reload the page once to pick up the new build; after that,
+ * show a message instead of an endless spinner.
+ */
+async function loadChunk(factory) {
+    try {
+        const module = await factory();
+        try {
+            window.sessionStorage.removeItem('doonportal.chunk-reload');
+        } catch {
+            // Storage unavailable; nothing to reset.
+        }
+        return module;
+    } catch {
+        try {
+            return await factory();
+        } catch (error) {
+            const key = 'doonportal.chunk-reload';
+            let reloaded = false;
+            try {
+                reloaded = window.sessionStorage.getItem(key) === '1';
+                window.sessionStorage.setItem(key, '1');
+            } catch {
+                reloaded = true;
+            }
+            if (!reloaded) {
+                window.location.reload();
+                return new Promise(() => {});
+            }
+            return {
+                default: function ChunkError() {
+                    return (
+                        <div className="container-page py-16 text-center">
+                            <p className="font-semibold">This part of DoonPortal didn’t load.</p>
+                            <button type="button" className="btn-primary mt-4" onClick={() => window.location.reload()}>
+                                Reload
+                            </button>
+                            <p className="sr-only">{String(error)}</p>
+                        </div>
+                    );
+                },
+            };
+        }
+    }
+}
 
 function ScrollToTop() {
     const { pathname } = useLocation();
@@ -37,6 +85,7 @@ function App() {
     return (
         <BrowserRouter>
             <ScrollToTop />
+            <SeoManager />
             <AuthProvider>
                 <Routes>
                     <Route

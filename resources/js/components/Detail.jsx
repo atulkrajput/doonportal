@@ -42,19 +42,6 @@ export function Breadcrumbs({ items }) {
         </nav>
     );
 }
-
-export function breadcrumbJsonLd(items) {
-    return {
-        '@type': 'BreadcrumbList',
-        itemListElement: items.map(([to, label], i) => ({
-            '@type': 'ListItem',
-            position: i + 1,
-            name: label,
-            ...(to ? { item: `${window.location.origin}${to}` } : {}),
-        })),
-    };
-}
-
 export function InfoRow({ icon, children }) {
     return (
         <div className="flex gap-3 py-2 text-sm">

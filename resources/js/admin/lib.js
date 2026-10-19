@@ -12,6 +12,10 @@ export const PERMISSIONS = {
     taxonomy: 'taxonomy.manage',
     users: 'users.manage',
     audit: 'audit.view',
+    monetization: 'monetization.manage',
+    analytics: 'analytics.view',
+    seo: 'seo.manage',
+    settings: 'settings.manage',
 };
 
 export const CONTENT_PERMISSIONS = [
@@ -119,4 +123,15 @@ export function formatDateTime(iso, timeZone = 'Asia/Kolkata') {
         return '—';
     }
     return new Intl.DateTimeFormat('en-IN', { timeZone, dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso));
+}
+
+export function formatMoney(paise, currency = 'INR') {
+    if (paise == null) {
+        return '—';
+    }
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: paise % 100 ? 2 : 0 }).format(paise / 100);
+}
+
+export function formatNumber(n) {
+    return new Intl.NumberFormat('en-IN').format(n ?? 0);
 }

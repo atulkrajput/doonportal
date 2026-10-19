@@ -1,5 +1,4 @@
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { EventCard } from '../components/Cards';
 import { ChipGroup, PageHeader, ResultsGrid, SelectFilter, useUrlFilters } from '../components/Listing';
 import { EmptyState } from '../components/States';
@@ -26,8 +25,6 @@ export default function EventList() {
         free: filters.get('free'),
         page: filters.get('page'),
     });
-
-    useMeta({ title: 'Events in Dehradun', description: 'Concerts, workshops, markets and community events happening in Doon.' });
 
     return (
         <>

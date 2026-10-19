@@ -30,7 +30,7 @@ class SettingsController extends Controller
     public function update(Request $request, string $group, SiteSettings $settings): JsonResponse
     {
         $this->authorizeGroup($group);
-        $values = $request->validate(SiteSettings::rules($group));
+        $values = $request->validate(SiteSettings::rules($group), SiteSettings::messages());
 
         return response()->json(['data' => $settings->update($group, $values, $request->user())]);
     }

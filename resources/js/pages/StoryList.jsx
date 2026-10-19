@@ -1,5 +1,4 @@
 import { useApi } from '../hooks/useApi';
-import { useMeta } from '../hooks/useMeta';
 import { StoryCard } from '../components/Cards';
 import { ChipGroup, PageHeader, ResultsGrid, SelectFilter, useUrlFilters } from '../components/Listing';
 
@@ -16,7 +15,6 @@ export default function StoryList() {
     const filters = useUrlFilters();
     const { data: cats } = useApi('/categories', { type: 'story' });
     const state = useApi('/stories', { type: filters.get('type'), category: filters.get('category'), page: filters.get('page') });
-    useMeta({ title: 'Doon Stories', description: 'Guides, heritage features, interviews and local stories from Dehradun.' });
 
     return (
         <>

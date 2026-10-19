@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router';
 import { useApi } from '../../hooks/useApi';
 import { ErrorState } from '../../components/States';
-import { formatDateTime, humanize, statusTone } from '../lib';
+import { formatDateTime, formatMoney, humanize, statusTone } from '../lib';
 
 function get(record, path) {
     return path.split('.').reduce((v, k) => (v == null ? v : v[k]), record);
@@ -24,6 +24,12 @@ function Cell({ column, record }) {
     }
     if (column.datetime) {
         return <span className="whitespace-nowrap">{formatDateTime(value)}</span>;
+    }
+    if (column.date) {
+        return <span className="whitespace-nowrap">{value ? String(value).slice(0, 10) : '—'}</span>;
+    }
+    if (column.money) {
+        return <span className="whitespace-nowrap tabular-nums">{formatMoney(value, record.currency || 'INR')}</span>;
     }
     return <span>{value ?? '—'}</span>;
 }
@@ -96,11 +102,11 @@ function Filters({ resource, filters }) {
 
     return (
         <div className="flex flex-wrap gap-2">
-            <input className="input w-full sm:w-64" type="search" placeholder="Search…" value={filters.get('q')} onChange={(e) => filters.set('q', e.target.value)} aria-label="Search" />
+            <input className="input w-full sm:w-64" type="search" placeholder={resource.searchPlaceholder || 'Search…'} value={filters.get('q')} onChange={(e) => filters.set('q', e.target.value)} aria-label="Search" />
             {resource.filters.includes('status') && select('status', 'Any status', resource.statuses.map((s) => [s, humanize(s)]))}
             {resource.filters.includes('story_type') && select('type', 'Any type', ['STORY', 'GUIDE', 'LIST', 'NEWS', 'INTERVIEW', 'HERITAGE'].map((t) => [t, humanize(t)]))}
             {resource.filters.includes('category_type') && select('type', 'Any type', ['business', 'place', 'event', 'story'].map((t) => [t, humanize(t)]))}
-            {resource.filters.includes('is_published') && select('is_published', resource.type === 'category' ? 'Active or not' : 'Published or not', [['1', 'Yes'], ['0', 'No']])}
+            {resource.filters.includes('is_published') && select('is_published', resource.publishedLabel || (resource.type === 'category' ? 'Active or not' : 'Published or not'), [['1', 'Yes'], ['0', 'No']])}
             {resource.filters.includes('area_id') && <AreaFilter value={filters.get('area_id')} onChange={(v) => filters.set('area_id', v)} />}
             {select('sort', 'Sort: newest', (resource.sorts || [['oldest', 'Oldest'], ['name', 'Name'], ['updated', 'Recently updated']]).filter(([v]) => v !== 'newest'))}
             {resource.filters.includes('trashed') && select('trashed', 'Hide deleted', [['with', 'Include deleted'], ['only', 'Only deleted']])}
@@ -116,7 +122,10 @@ export default function ResourceList({ resourceKey, resource }) {
     return (
         <div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h1 className="font-display text-2xl font-bold">{resource.label}</h1>
+                <div>
+                    <h1 className="font-display text-2xl font-bold">{resource.label}</h1>
+                    {resource.intro && <p className="mt-1 max-w-2xl text-sm text-stone-600">{resource.intro}</p>}
+                </div>
                 <Link to={`/admin/${resourceKey}/new`} className="btn-primary">
                     + New {resource.singular.toLowerCase()}
                 </Link>
