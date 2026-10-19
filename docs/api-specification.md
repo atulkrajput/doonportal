@@ -6,7 +6,7 @@ JSON only. Single resources are wrapped in `data`; paginated lists return `{data
 { "message": "The given data was invalid.", "errors": { "field": ["Validation message."] } }
 ```
 
-Statuses used: 200, 201, 202, 204, 401, 404 (also for records the viewer may not see), 409 (invalid status transition), 422, 429.
+Statuses used: 200, 201, 202, 204, 401, 403 (signed in but not permitted — admin routes), 404 (also for records the viewer may not see), 409 (invalid status transition), 422, 429.
 
 Authentication: `Authorization: Bearer <token>` from register/login. Public endpoints accept a token optionally (editors can then see unpublished records).
 
@@ -78,6 +78,89 @@ Rate limits: `api` 120/min per user or IP; `auth` 10/min per IP and 5/min per em
 
 Stored with a daily-rotating HMAC session hash; raw IP and user agent are not stored.
 
+## Admin & CMS — `/api/v1/admin`
+
+All routes require `auth:sanctum` and the `admin.access` gate (the user holds at least one permission). Each group adds a permission gate (`can:<permission>`); SUPER_ADMIN passes every gate. Guests get 401; signed-in users without the permission get 403. Records are addressed by **id (ULID)**, not slug. Every write runs in a transaction and is written to `audit_logs` (actor, action, changed fields only as before/after, IP, user agent); no-op updates are not logged.
+
+Responses: single records are `{data: {...}}` with every column plus loaded relations (and `type`, `is_demo`, `is_trashed`); lists are paginated `{data, links, meta}`.
+
+### Common list parameters
+
+| Param | Rules |
+|---|---|
+| `page`, `per_page` | per_page 1–100, default 25 |
+| `q` | ≤ 100 chars; case-insensitive substring on name/title (+ a few text columns) |
+| `sort` | `newest` (default) · `oldest` · `updated` · `name` · `starts_at` (events) |
+| `status` | must be a valid status of that entity (422 otherwise) |
+| `area_id`, `category_id` | ULIDs (businesses, places, events, venues) |
+| `is_published` | `0`/`1` (businesses, areas; for categories: the active flag) |
+| `type` | stories: story type; categories: category type |
+| `trashed` | `with` · `only` (soft-deleted records) |
+
+### Content resources
+
+| Resource | Permission | Extra endpoints |
+|---|---|---|
+| `businesses` | `businesses.manage` | `POST /{id}/status` |
+| `places` | `places.manage` | `POST /{id}/status` |
+| `events` | `events.manage` | `POST /{id}/status`, `POST /{id}/reschedule` |
+| `venues`, `organizers` | `events.manage` | — |
+| `stories` | `stories.manage` | `POST /{id}/status` |
+| `collections` | `collections.manage` | `POST /{id}/status`, `PUT /{id}/items` |
+| `areas`, `categories` | `taxonomy.manage` | — |
+
+Each resource has `GET /` (list), `POST /` (201), `GET /{id}` (also soft-deleted), `PATCH /{id}` (only sent fields are validated and changed), `DELETE /{id}` (soft delete, 204) and `POST /{id}/restore`.
+
+Write rules (Form Requests in `app/Http/Requests/Admin`):
+
+- Never writable here: `status`, `verified_at`, `owner_id`, rating aggregates, `metadata` (demo flags cannot be set or cleared), `published_at` of places/collections, `cancellation_reason`. Unknown keys are ignored.
+- `slug`: optional, lowercase kebab-case, unique (including soft-deleted rows); blank = generate / keep.
+- Coordinates: `latitude` and `longitude` together, inside the Uttarakhand bounding box (28.5–31.5 N, 77.5–81.1 E).
+- URLs: `http`/`https` only. Phones: digits, spaces, dashes, optional leading `+`.
+- `category_ids[]` must exist and match the entity's category type; `area_ids[]` must exist.
+- **Businesses** also take `primary_category_id` (one of `category_ids`), `hours[]` (`day_of_week` 0–6, `opens_at`/`closes_at` as local `HH:MM`, `is_closed`; overnight slots allowed), `services[]` (`name`, `description`, `price_min_paise` ≤ `price_max_paise`), `social_links[]` (`platform` from an allowlist, `url`), `amenities[]`, `payment_methods[]`, `price_range` 1–4. A sent child array replaces all existing rows.
+- **Places**: `facilities[]` (`name`, `notes`); entry fees in paise (min ≤ max).
+- **Events**: `starts_at`/`ends_at` without an offset (e.g. `2026-11-01T18:00`) are read in the event's `timezone` (default Asia/Kolkata) and stored in UTC; `ends_at` ≥ `starts_at`; `timezone` must be an IANA name; `currency` is INR. Dates of PUBLISHED/CANCELLED events change only through `/reschedule` (422 otherwise). `submitted_by` is the creating user.
+- **Stories**: `body` (≤ 200 000 chars) is sanitized server-side (allowlist: p, h2–h4, lists, links with forced `rel="noopener noreferrer nofollow"`, blockquote, code/pre, figure, tables, https/relative images; scripts, styles, event handlers, iframes, forms, SVG and `javascript:`/`data:` URLs are removed). `reading_minutes` is estimated when not sent; `published_at` (optional scheduling) is read as IST; `linked_entities[]` = `{type: business|place|event|area, id}`. `author_id` is the creating user.
+- **Collections**: `curator_id` is the creating user. `PUT /{id}/items` with `items[]` = `{type: business|place|event|story, id, note?}` (≤ 100, no duplicates, must exist) replaces the ordered list; audited as `collection.items_updated`.
+- **Categories**: `type` is required on create and cannot change; `parent_id` must be a top-level category of the same type; a category with children cannot be nested or deleted (422).
+
+### Status changes
+
+All go through `StatusTransitionService` and are audited as `<type>.status_changed`; an invalid transition returns 409.
+
+| Endpoint | Body | Notes |
+|---|---|---|
+| `POST businesses/{id}/status` | `status` (BusinessStatus), `note?` | Transitions per `BusinessStatus`; VERIFIED sets `verified_at`; CLAIMED needs an approved owner. |
+| `POST events/{id}/status` | `status` (EventStatus), `note` | `note` is **required** for CANCELLED and becomes `cancellation_reason`. Publishing checks start date, chronology, time zone and the ≤ 548-day plausibility window. |
+| `POST events/{id}/reschedule` | `starts_at`, `ends_at?`, `reason?` | For PUBLISHED/CANCELLED events the first announced start is kept in `original_starts_at`; publish date checks apply (409); unchanged dates → 422. Audited as `event.rescheduled`. |
+| `POST places/{id}/status`, `stories/{id}/status`, `collections/{id}/status` | `status` (DRAFT · REVIEW · PUBLISHED · ARCHIVED), `note?` | ARCHIVED can only go back to DRAFT or REVIEW. First publication sets `published_at`. A story needs a body and a collection at least one item to be published. |
+
+### Media (any content permission, gate `media.upload`)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/admin/media` | paginated; `q` on alt text, credit, path |
+| POST | `/admin/media` | multipart `file`: JPEG, PNG, WebP or GIF detected from the file **contents**, ≤ 5 MB, ≤ 8000×8000 px (SVG rejected); `alt_text?`, `credit?`, `source_url?` → 201. Stored on the `public` disk as `media/YYYY/MM/<ulid>.<ext>` — name and extension chosen by the server. Throttled 30/min. |
+| PATCH | `/admin/media/{id}` | `alt_text`, `credit`, `source_url` |
+
+Use the returned `id` as `cover_media_id` / `logo_media_id`.
+
+### Users & roles (`users.manage`)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/admin/users` | `q` (name/email), `role` |
+| GET | `/admin/users/{id}` | id, name, email, phone, roles, permissions, `is_self`; never password or tokens |
+| PUT | `/admin/users/{id}/roles` | `roles[]` (RoleName values) replaces the user's roles; USER is always kept. **403** when changing your own roles, or when anyone but a SUPER_ADMIN grants or revokes ADMIN/SUPER_ADMIN or edits an account holding either. Audited as `user.roles_changed`. |
+
+### Audit log & dashboard
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/admin/audit-logs` | `audit.view` | Newest first. Filters: `action` (exact, or a prefix ending in `.` such as `business.`), `actor_id`, `auditable_type` (morph alias), `auditable_id`, `from`/`to` (Y-m-d, IST). Read-only: no update or delete routes. |
+| GET | `/admin/dashboard` | any staff | Only sections the viewer may manage: counts by status for businesses, places, events (+ upcoming public), stories, collections; areas and categories; users; moderation queue sizes (pending reviews, submissions, claims; open reports); the last 10 audit entries (with `audit.view`). |
+
 ## Not yet implemented
 
-Favorites, reviews (write), submissions, reports, owner portal, admin/moderation, `/map`, `/nearby`, `/me/avatar`, `/me/*` lists, email verification — see [implementation-roadmap.md](implementation-roadmap.md).
+Favorites, reviews (write), submissions, reports, owner portal, moderation screens for reviews/claims/submissions/reports, `/map`, `/nearby`, `/me/avatar`, `/me/*` lists, email verification — see [implementation-roadmap.md](implementation-roadmap.md).

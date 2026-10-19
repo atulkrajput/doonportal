@@ -95,6 +95,17 @@ class EventAdminTest extends AdminTestCase
         ])->assertStatus(409);
     }
 
+    public function test_rescheduling_to_the_same_dates_is_rejected_and_not_audited(): void
+    {
+        $this->actingAsRole(RoleName::Editor);
+        $start = now()->addDays(5)->startOfHour();
+        $event = Event::factory()->create(['status' => EventStatus::Published, 'starts_at' => $start, 'ends_at' => null]);
+
+        $this->postJson("/api/v1/admin/events/{$event->id}/reschedule", ['starts_at' => $start->toIso8601String()])
+            ->assertUnprocessable()->assertJsonValidationErrors('starts_at');
+        $this->assertNull($this->lastAudit('event.rescheduled'));
+    }
+
     public function test_rescheduling_a_draft_does_not_set_original_start(): void
     {
         $this->actingAsRole(RoleName::Editor);

@@ -62,6 +62,11 @@ class StoryRequest extends AdminWriteRequest
     {
         $attributes = parent::modelAttributes();
 
+        // Editors enter publish dates as Dehradun wall-clock time.
+        if (array_key_exists('published_at', $attributes)) {
+            $attributes['published_at'] = EventRequest::toUtc($attributes['published_at'], 'Asia/Kolkata');
+        }
+
         if (array_key_exists('body', $attributes)) {
             $attributes['body'] = app(HtmlSanitizer::class)->sanitize($attributes['body']);
             if (! array_key_exists('reading_minutes', $attributes)) {

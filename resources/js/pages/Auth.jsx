@@ -67,9 +67,13 @@ export function Login() {
     useMeta({ title: 'Sign in' });
     const { login } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    // Only same-site paths: "//host" or "/\host" would be an open redirect.
+    const next = searchParams.get('next') || '';
+    const target = /^\/(?![/\\])/.test(next) ? next : '/saved';
     const form = useForm(async (values) => {
         await login(values);
-        navigate('/saved');
+        navigate(target);
     });
 
     return (

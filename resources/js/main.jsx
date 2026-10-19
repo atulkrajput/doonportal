@@ -1,4 +1,4 @@
-import { StrictMode, useEffect } from 'react';
+import { StrictMode, Suspense, lazy, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router';
 import { AuthProvider } from './context/AuthContext';
@@ -20,6 +20,10 @@ import { Explore, Services } from './pages/Explore';
 import { ForgotPassword, Login, Register, ResetPassword } from './pages/Auth';
 import { BusinessPortal, InfoPage, Saved } from './pages/Static';
 import NotFound from './pages/NotFound';
+import { PageLoading } from './components/States';
+
+// Staff-only code is split into its own chunk and never loaded by public visitors.
+const AdminApp = lazy(() => import('./admin/AdminApp'));
 
 function ScrollToTop() {
     const { pathname } = useLocation();
@@ -35,6 +39,14 @@ function App() {
             <ScrollToTop />
             <AuthProvider>
                 <Routes>
+                    <Route
+                        path="admin/*"
+                        element={
+                            <Suspense fallback={<PageLoading />}>
+                                <AdminApp />
+                            </Suspense>
+                        }
+                    />
                     <Route element={<Layout />}>
                         <Route index element={<Home />} />
                         <Route path="search" element={<Search />} />

@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class EventController extends AdminController
 {
@@ -78,13 +79,14 @@ class EventController extends AdminController
 
     public function reschedule(RescheduleEventRequest $request, Event $event, StatusTransitionService $transitions): AdminRecordResource
     {
-        $transitions->rescheduleEvent(
-            $event,
-            EventRequest::toUtc($request->validated('starts_at'), $event->timezone),
-            EventRequest::toUtc($request->validated('ends_at'), $event->timezone),
-            $request->user(),
-            $request->validated('reason'),
-        );
+        $startsAt = EventRequest::toUtc($request->validated('starts_at'), $event->timezone);
+        $endsAt = EventRequest::toUtc($request->validated('ends_at'), $event->timezone);
+
+        if ($event->starts_at?->equalTo($startsAt) && $event->ends_at?->toIso8601String() === $endsAt?->toIso8601String()) {
+            throw ValidationException::withMessages(['starts_at' => 'The new dates are the same as the current ones.']);
+        }
+
+        $transitions->rescheduleEvent($event, $startsAt, $endsAt, $request->user(), $request->validated('reason'));
 
         return new AdminRecordResource($this->loadDetail($event));
     }

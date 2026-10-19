@@ -79,7 +79,7 @@ class StoryController extends AdminController
 
     private function loadDetail(Story $story): Story
     {
-        return $story->load(['author:id,name', 'categories:id,name,slug,type', 'entityLinks', 'cover']);
+        return $story->load(['author:id,name', 'categories:id,name,slug,type', 'entityLinks.entity', 'cover']);
     }
 
     /**
