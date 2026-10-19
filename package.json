@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "lint": "eslint resources/js"
     },
     "devDependencies": {
         "@eslint/js": "^9.39.5",
@@ -20,6 +21,7 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "dompurify": "^3.4.17",
         "react": "^19.3.1",
         "react-dom": "^19.3.1",
         "react-router": "^7.18.4"

@@ -1,11 +1,95 @@
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
-@source '../**/*.js';
+@source '../js/**/*.{js,jsx}';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-display: 'Fraunces', ui-serif, Georgia, serif;
+
+    --color-forest-50: #f1f7f3;
+    --color-forest-100: #dcebe1;
+    --color-forest-200: #b9d6c3;
+    --color-forest-500: #2f7a55;
+    --color-forest-600: #22613f;
+    --color-forest-700: #1b4d33;
+    --color-forest-900: #0f2b1d;
+    --color-saffron-100: #fdf0d9;
+    --color-saffron-400: #f0b54a;
+    --color-saffron-500: #e39a1f;
+    --color-cream: #faf7f0;
+    --color-ink: #1c1917;
+}
+
+@layer base {
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+        @apply bg-cream text-ink antialiased;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-forest-500;
+    }
+}
+
+@layer components {
+    .container-page {
+        @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50;
+    }
+
+    .btn-primary {
+        @apply bg-forest-600 text-white hover:bg-forest-700;
+    }
+
+    .btn-secondary {
+        @apply border border-stone-300 bg-white text-ink hover:border-forest-500 hover:text-forest-700;
+    }
+
+    .chip {
+        @apply inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-3 py-1 text-sm text-stone-700 hover:border-forest-500 hover:text-forest-700;
+    }
+
+    .chip-active {
+        @apply border-forest-600 bg-forest-600 text-white hover:text-white;
+    }
+
+    .input {
+        @apply w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm placeholder:text-stone-400 focus:border-forest-500 focus:outline-none;
+    }
+
+    .prose-story p {
+        @apply mb-4 leading-relaxed;
+    }
+
+    .prose-story h2 {
+        @apply mt-8 mb-3 font-display text-2xl;
+    }
+
+    .prose-story h3 {
+        @apply mt-6 mb-2 text-lg font-semibold;
+    }
+
+    .prose-story a {
+        @apply text-forest-700 underline;
+    }
+
+    .prose-story ul {
+        @apply mb-4 list-disc pl-6;
+    }
+
+    .prose-story ol {
+        @apply mb-4 list-decimal pl-6;
+    }
+
+    .prose-story blockquote {
+        @apply my-6 border-l-4 border-saffron-400 pl-4 italic text-stone-700;
+    }
 }

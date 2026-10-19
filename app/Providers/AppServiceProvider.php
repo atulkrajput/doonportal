@@ -8,6 +8,8 @@ use App\AI\Providers\GroqProvider;
 use App\Enums\EntityType;
 use App\Enums\PermissionName;
 use App\Models\User;
+use App\Services\Search\DatabaseSearchService;
+use App\Services\Search\SearchService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
                 default => throw new InvalidArgumentException("Unsupported AI provider [{$name}]."),
             };
         });
+
+        $this->app->bind(SearchService::class, DatabaseSearchService::class);
     }
 
     public function boot(): void
