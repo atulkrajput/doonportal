@@ -17,7 +17,7 @@ import Account from './pages/Account';
 import Analytics from './pages/Analytics';
 import Revenue from './pages/Revenue';
 import { SeoAudit, SeoPages, SeoSettings } from './pages/Seo';
-import { SocialSettings, TrackingSettings } from './pages/Settings';
+import { LegalSettings, SocialSettings, TrackingSettings } from './pages/Settings';
 
 function Forbidden({ title = 'You don’t have access to this section.' }) {
     return (
@@ -201,6 +201,7 @@ const PAGES = [
     ['seo/audit', PERMISSIONS.seo, <SeoAudit key="seo-audit" />],
     ['social', PERMISSIONS.settings, <SocialSettings key="social" />],
     ['tracking', PERMISSIONS.settings, <TrackingSettings key="tracking" />],
+    ['legal', PERMISSIONS.settings, <LegalSettings key="legal" />],
 ];
 
 export default function AdminApp() {

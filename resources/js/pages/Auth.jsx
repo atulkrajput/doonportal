@@ -107,6 +107,17 @@ export function Register() {
                 <Field label="Email" name="email" type="email" autoComplete="email" required errors={form.errors} />
                 <Field label="Password" name="password" type="password" autoComplete="new-password" required errors={form.errors} />
                 <Field label="Confirm password" name="password_confirmation" type="password" autoComplete="new-password" required errors={form.errors} />
+                <p className="text-xs text-stone-600">
+                    By creating an account you agree to our{' '}
+                    <Link to="/terms" className="font-semibold text-navy-700 underline">
+                        Terms of use
+                    </Link>{' '}
+                    and confirm you have read our{' '}
+                    <Link to="/privacy" className="font-semibold text-navy-700 underline">
+                        Privacy policy
+                    </Link>
+                    . You must be 18 or older.
+                </p>
                 <button type="submit" className="btn-primary w-full" disabled={form.busy}>
                     {form.busy ? 'Creating account…' : 'Create account'}
                 </button>

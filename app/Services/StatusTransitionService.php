@@ -9,6 +9,7 @@ use App\Exceptions\InvalidStatusTransition;
 use App\Models\Business;
 use App\Models\Collection;
 use App\Models\Event;
+use App\Models\Page;
 use App\Models\Place;
 use App\Models\Story;
 use App\Models\User;
@@ -138,9 +139,9 @@ class StatusTransitionService
     }
 
     /**
-     * Editorial workflow for places, stories and collections.
+     * Editorial workflow for places, stories, collections and site pages.
      */
-    public function transitionPublication(Place|Story|Collection $model, PublicationStatus $to, ?User $actor = null, ?string $note = null): Place|Story|Collection
+    public function transitionPublication(Place|Story|Collection|Page $model, PublicationStatus $to, ?User $actor = null, ?string $note = null): Place|Story|Collection|Page
     {
         $from = $model->status;
         $type = $model->getMorphClass();
@@ -150,8 +151,8 @@ class StatusTransitionService
         }
 
         if ($to === PublicationStatus::Published) {
-            if ($model instanceof Story && blank(trim(strip_tags((string) $model->body)))) {
-                throw new InvalidStatusTransition('A story needs a body before it can be published.');
+            if (($model instanceof Story || $model instanceof Page) && blank(trim(strip_tags((string) $model->body)))) {
+                throw new InvalidStatusTransition("A {$type} needs a body before it can be published.");
             }
             if ($model instanceof Collection && ! $model->items()->exists()) {
                 throw new InvalidStatusTransition('A collection needs at least one item before it can be published.');

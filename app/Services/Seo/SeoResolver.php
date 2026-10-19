@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Collection;
 use App\Models\Event;
 use App\Models\Media;
+use App\Models\Page;
 use App\Models\Place;
 use App\Models\SeoMeta;
 use App\Models\Story;
@@ -38,9 +39,6 @@ class SeoResolver
         '/explore' => ['All categories', 'Browse every category of businesses and places in Dehradun.'],
         '/services' => ['Services in Dehradun', 'Home, professional, lifestyle, automotive, education and healthcare services in Dehradun.'],
         '/business-portal' => ['List your business', 'Add or claim your Dehradun business on DoonPortal — free.'],
-        '/about' => ['About DoonPortal', 'DoonPortal is a local guide to Dehradun’s businesses, places, events and stories.'],
-        '/privacy' => ['Privacy policy', 'How DoonPortal collects, uses and protects your information.'],
-        '/terms' => ['Terms of use', 'The terms for using DoonPortal.'],
     ];
 
     /** Utility pages that must never be indexed. */
@@ -102,6 +100,9 @@ class SeoResolver
         }
 
         $segments = explode('/', ltrim($path, '/'));
+        if (count($segments) === 1 && preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $segments[0])) {
+            return $this->sitePage($segments[0]);
+        }
         if (count($segments) !== 2 || ! preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $segments[1])) {
             return $this->notFound($path);
         }
@@ -356,6 +357,33 @@ class SeoResolver
                 $this->breadcrumbs([['Stories', '/stories'], [$s->title, $path]]),
             ];
         }
+
+        return $page;
+    }
+
+    /** Editable site pages: /privacy, /terms, /about… */
+    private function sitePage(string $slug): SeoPage
+    {
+        $p = Page::query()->public()->where('slug', $slug)->first();
+        if (! $p) {
+            return $this->notFound("/{$slug}");
+        }
+
+        $page = $this->page($p->title, $p->summary ?: $p->body, "/{$slug}", override: $this->pathOverride("/{$slug}"));
+        $page->jsonLd = [
+            array_filter([
+                '@type' => match ($slug) {
+                    'about' => 'AboutPage',
+                    'contact' => 'ContactPage',
+                    default => 'WebPage',
+                },
+                'name' => $p->title,
+                'url' => self::absoluteUrl("/{$slug}"),
+                'description' => $page->description,
+                'dateModified' => $p->updated_at?->toIso8601String(),
+            ]),
+            $this->breadcrumbs([[$p->title, "/{$slug}"]]),
+        ];
 
         return $page;
     }

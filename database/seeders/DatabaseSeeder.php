@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             AreaSeeder::class,
             CategorySeeder::class,
+            SitePagesSeeder::class,
         ]);
     }
 }

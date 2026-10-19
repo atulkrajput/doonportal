@@ -17,7 +17,7 @@ use InvalidArgumentException;
  */
 class SiteSettings
 {
-    public const GROUPS = ['seo', 'social', 'tracking'];
+    public const GROUPS = ['seo', 'social', 'tracking', 'legal'];
 
     /**
      * @return array<string, mixed>
@@ -51,9 +51,22 @@ class SiteSettings
                 'google_site_verification' => null,
                 'bing_site_verification' => null,
             ],
+            // Operator and grievance details shown on legal pages. Never guessed: empty until staff fill them in.
+            'legal' => [
+                'operator_name' => null,
+                'contact_email' => null,
+                'contact_phone' => null,
+                'postal_address' => null,
+                'grievance_officer_name' => null,
+                'grievance_officer_email' => null,
+                'jurisdiction_city' => 'Dehradun',
+            ],
             default => throw new InvalidArgumentException("Unknown settings group [{$group}]."),
         };
     }
+
+    /** Legal details that must be filled in before the legal pages are complete. */
+    public const REQUIRED_LEGAL = ['operator_name', 'contact_email', 'postal_address', 'grievance_officer_name', 'grievance_officer_email'];
 
     /**
      * Validation rules for a PUT of the whole group.
@@ -91,6 +104,15 @@ class SiteSettings
                 'google_site_verification' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_-]{10,100}$/'],
                 'bing_site_verification' => ['nullable', 'string', 'regex:/^[A-Fa-f0-9]{16,64}$/'],
             ],
+            'legal' => [
+                'operator_name' => ['nullable', 'string', 'max:150'],
+                'contact_email' => ['nullable', 'email', 'max:255'],
+                'contact_phone' => ['nullable', 'string', 'regex:/^\+?[0-9][0-9 \-]{6,18}$/'],
+                'postal_address' => ['nullable', 'string', 'max:500'],
+                'grievance_officer_name' => ['nullable', 'string', 'max:150'],
+                'grievance_officer_email' => ['nullable', 'email', 'max:255'],
+                'jurisdiction_city' => ['required', 'string', 'max:80'],
+            ],
             default => throw new InvalidArgumentException("Unknown settings group [{$group}]."),
         };
     }
@@ -110,6 +132,7 @@ class SiteSettings
             'bing_site_verification.regex' => 'Paste only the content value of the Bing verification tag.',
             '*.regex' => 'This must be a link to your profile on that site, starting with https://.',
             'x_handle.regex' => 'Enter a handle like @doonportal.',
+            'contact_phone.regex' => 'Enter a phone number with digits, spaces or dashes, optionally starting with +.',
         ];
     }
 

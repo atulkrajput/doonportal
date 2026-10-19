@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\EntityType;
+use App\Models\Page;
 use App\Models\SeoMeta;
 use App\Services\Seo\SeoResolver;
 use Illuminate\Foundation\Http\FormRequest;
@@ -44,7 +45,8 @@ class SeoMetaRequest extends FormRequest
             if ($path !== null) {
                 $allowed = ['/', ...array_keys(SeoResolver::STATIC_PAGES)];
                 $isCategory = preg_match('#^/(businesses|places)/[a-z0-9-]+$#', $path) === 1;
-                if (! in_array($path, $allowed, true) && ! $isCategory) {
+                $isSitePage = preg_match('#^/([a-z0-9-]+)$#', $path, $m) === 1 && Page::where('slug', $m[1])->exists();
+                if (! in_array($path, $allowed, true) && ! $isCategory && ! $isSitePage) {
                     $validator->errors()->add('path', 'Use a site page such as /events or a category page such as /businesses/cafes. Override individual records from their edit screen.');
                 }
             }

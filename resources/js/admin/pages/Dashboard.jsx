@@ -51,6 +51,16 @@ export default function Dashboard() {
     return (
         <div>
             <h1 className="mb-4 font-display text-2xl font-bold">Dashboard</h1>
+            {d.setup?.map((item) => (
+                <div key={item.key} role="status" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <span>
+                        <strong>Setup needed:</strong> {item.message}
+                    </span>
+                    <Link to={item.link} className="btn-secondary">
+                        Fill in details
+                    </Link>
+                </div>
+            ))}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {d.businesses && (
                     <Card title="Businesses" to="/admin/businesses" total={d.businesses.total}>

@@ -68,6 +68,15 @@ export const MENU = [
         ],
     },
     {
+        id: 'site',
+        label: 'Site & legal',
+        icon: 'list',
+        items: [
+            { to: '/admin/pages', label: 'Site pages', permission: PERMISSIONS.pages },
+            { to: '/admin/legal', label: 'Legal details', permission: PERMISSIONS.settings },
+        ],
+    },
+    {
         id: 'administration',
         label: 'Administration',
         icon: 'shield',

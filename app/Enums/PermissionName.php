@@ -21,6 +21,7 @@ enum PermissionName: string
     case ViewAnalytics = 'analytics.view';
     case ManageSeo = 'seo.manage';
     case ManageSettings = 'settings.manage';
+    case ManagePages = 'pages.manage';
 
     /**
      * Permissions that edit public content (and may therefore upload media).

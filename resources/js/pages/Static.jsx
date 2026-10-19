@@ -60,22 +60,3 @@ export function BusinessPortal() {
         </>
     );
 }
-
-const INFO = {
-    about: [
-        'About DoonPortal',
-        'DoonPortal is building a trusted, structured guide to Dehradun: businesses, places, events, neighbourhoods and stories. We label what we have verified, show where information comes from, and never invent listings, reviews or opening hours.',
-    ],
-    privacy: ['Privacy', 'Our full privacy policy is being finalised before public launch. We collect only what is needed to run the service, never sell personal data, and store interaction analytics without raw IP addresses.'],
-    terms: ['Terms of use', 'Our terms of use are being finalised before public launch.'],
-};
-
-export function InfoPage({ page }) {
-    const [title, body] = INFO[page];
-    return (
-        <>
-            <PageHeader title={title} />
-            <div className="container-page max-w-3xl py-8 leading-relaxed text-stone-700">{body}</div>
-        </>
-    );
-}

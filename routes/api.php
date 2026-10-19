@@ -12,10 +12,12 @@ use App\Http\Controllers\Api\V1\CollectionController;
 use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\PageController;
 use App\Http\Controllers\Api\V1\PlaceController;
 use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\V1\SeoController;
 use App\Http\Controllers\Api\V1\StoryController;
+use App\Services\SiteSettings;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
@@ -45,6 +47,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('home', HomeController::class)->name('home');
     Route::get('search', SearchController::class)->name('search');
     Route::get('seo', SeoController::class)->name('seo');
+    Route::get('pages', [PageController::class, 'index'])->name('pages.index');
+    Route::get('pages/{slug}', [PageController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('pages.show');
 
     Route::controller(BusinessController::class)->prefix('businesses')->name('businesses.')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -177,8 +181,20 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 Route::delete('{seoMeta:id}', 'destroy')->name('destroy');
             });
 
+        // Site pages (privacy, terms, about…).
+        Route::controller(Admin\PageController::class)->prefix('pages')->name('pages.')
+            ->middleware('can:'.PermissionName::ManagePages->value)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::get('{page:id}', 'show')->name('show')->withTrashed();
+                Route::patch('{page:id}', 'update')->name('update');
+                Route::delete('{page:id}', 'destroy')->name('destroy');
+                Route::post('{page:id}/restore', 'restore')->name('restore')->withTrashed();
+                Route::post('{page:id}/status', 'status')->name('status');
+            });
+
         // Settings groups: seo (seo.manage), social and tracking (settings.manage) — checked per group.
-        Route::get('settings/{group}', [Admin\SettingsController::class, 'show'])->whereIn('group', ['seo', 'social', 'tracking'])->name('settings.show');
-        Route::put('settings/{group}', [Admin\SettingsController::class, 'update'])->whereIn('group', ['seo', 'social', 'tracking'])->name('settings.update');
+        Route::get('settings/{group}', [Admin\SettingsController::class, 'show'])->whereIn('group', SiteSettings::GROUPS)->name('settings.show');
+        Route::put('settings/{group}', [Admin\SettingsController::class, 'update'])->whereIn('group', SiteSettings::GROUPS)->name('settings.update');
     });
 });

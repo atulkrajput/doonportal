@@ -35,6 +35,35 @@ const updatedColumn = { key: 'updated_at', label: 'Updated', datetime: true };
 const PAYMENT_METHODS = ['UPI', 'BANK_TRANSFER', 'CARD', 'CASH', 'CHEQUE', 'COMPLIMENTARY', 'OTHER'];
 
 export const RESOURCES = {
+    pages: {
+        label: 'Site pages',
+        singular: 'Page',
+        type: 'page',
+        permission: PERMISSIONS.pages,
+        titleKey: 'title',
+        publicPath: (r) => `/${r.slug}`,
+        statuses: PUBLICATION_STATUSES,
+        transitions: 'publication',
+        filters: ['status', 'trashed'],
+        intro: 'Privacy policy, terms, cookies, about, contact and other pages, served at /slug. Operator and contact details come from Legal details. Have legal pages reviewed by a lawyer before launch.',
+        columns: [nameColumn('title'), statusColumn, { key: 'slug', label: 'Address' }, { key: 'show_in_footer', label: 'In footer', boolean: true }, updatedColumn],
+        fields: [
+            { name: 'title', label: 'Title', type: 'text', required: true },
+            { name: 'slug', label: 'Slug (address)', type: 'text', help: 'The page is served at /slug. Leave blank to generate from the title.' },
+            { name: 'summary', label: 'Summary', type: 'textarea', span: 'full', help: 'Shown under the title and used as the search description.' },
+            {
+                name: 'body',
+                label: 'Body (HTML)',
+                type: 'html',
+                span: 'full',
+                help: 'Allowed: headings, paragraphs, lists, links, tables. Placeholders filled from Legal details: {{site_name}}, {{operator_name}}, {{contact_email}}, {{contact_phone}}, {{postal_address}}, {{grievance_officer_name}}, {{grievance_officer_email}}, {{jurisdiction_city}}, {{optional_tools}} (the tracking tools in use), {{last_updated}}.',
+            },
+            { name: 'show_in_footer', label: 'Show in footer', type: 'checkbox' },
+            { name: 'sort_order', label: 'Footer order', type: 'number' },
+        ],
+        defaults: { show_in_footer: true },
+    },
+
     plans: {
         label: 'Plans',
         singular: 'Plan',

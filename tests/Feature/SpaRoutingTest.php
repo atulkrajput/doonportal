@@ -85,7 +85,9 @@ class SpaRoutingTest extends TestCase
         $this->get("/business/{$business->slug}")->assertOk()
             ->assertSee('<title>Custom title | DoonPortal</title>', false)
             ->assertSee('content="Custom description"', false)
-            ->assertSee('gtag/js?id=G-TEST1234', false);
+            ->assertSee('"ga4_measurement_id":"G-TEST1234"', false)
+            // Nothing third-party is in the HTML itself: the consent banner loads it after a choice.
+            ->assertDontSee('googletagmanager.com', false);
         $this->get('/events')->assertSee('<title>Doon events this month | DoonPortal</title>', false)
             ->assertSee('content="noindex,follow"', false);
         $this->get('/admin')->assertDontSee('G-TEST1234', false);

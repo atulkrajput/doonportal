@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Page;
+use App\Services\PageRenderer;
 use App\Services\Seo\SeoResolver;
 use App\Services\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use stdClass;
 
 /**
  * Serves the React shell for every site path with server-rendered SEO metadata,
@@ -15,7 +18,7 @@ use Illuminate\Http\Response;
  */
 class SpaController extends Controller
 {
-    public function __invoke(Request $request, SeoResolver $resolver, SiteSettings $settings): Response|RedirectResponse
+    public function __invoke(Request $request, SeoResolver $resolver, SiteSettings $settings, PageRenderer $renderer): Response|RedirectResponse
     {
         $path = $request->getPathInfo();
         $canonicalPath = strtolower(rtrim($path, '/')) ?: '/';
@@ -32,15 +35,26 @@ class SpaController extends Controller
         }
 
         $isAdmin = $path === '/admin' || str_starts_with($path, '/admin/');
+        $tracking = array_filter($settings->get('tracking'));
+        $tools = $renderer->consentTools();
 
         return response()->view('app', [
             'seo' => $seo,
             'seoPath' => $path.($query ? "?{$query}" : ''),
-            // Third-party tracking never loads inside the staff area.
-            'tracking' => $isAdmin ? [] : array_filter($settings->get('tracking')),
+            // Verification meta tags only; they set no cookies.
+            'verification' => array_intersect_key($tracking, array_flip(['google_site_verification', 'bing_site_verification'])),
             'siteConfig' => [
                 'site_name' => $settings->get('seo')['site_name'],
                 'social' => array_filter($settings->get('social')),
+                'footer_pages' => Page::query()->public()->where('show_in_footer', true)
+                    ->orderBy('sort_order')->orderBy('title')->get(['slug', 'title'])
+                    ->map(fn (Page $p) => ['path' => "/{$p->slug}", 'title' => $p->title])->all(),
+                // Third-party tools load in the browser only after consent, and never in the staff area.
+                'consent' => [
+                    'version' => substr(md5(json_encode(array_map(fn ($c) => array_column($c, 'key'), $tools))), 0, 12),
+                    'tools' => $tools,
+                ],
+                'tracking' => $isAdmin ? new stdClass : array_diff_key($tracking, array_flip(['google_site_verification', 'bing_site_verification'])),
             ],
         ], $seo->status);
     }

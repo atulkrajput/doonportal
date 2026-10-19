@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Icon } from './Icons';
 import { Logo } from './Brand';
 import { SOCIAL_PROFILES, siteConfig } from '../lib/site';
+import { openCookieSettings } from '../lib/consent';
 import { isStaff } from '../admin/lib';
 
 const NAV = [
@@ -112,7 +113,7 @@ function Footer() {
         ['Discover', [['/places', 'Things to do'], ['/businesses/food-drink', 'Eat'], ['/businesses/shopping', 'Shop'], ['/services', 'Services'], ['/events', 'Events']]],
         ['Doon', [['/areas', 'Areas'], ['/stories', 'Stories'], ['/collections', 'Best of Doon'], ['/explore', 'All categories']]],
         ['For business', [['/business-portal', 'List your business'], ['/business-portal', 'Claim a listing']]],
-        ['About', [['/about', 'About DoonPortal'], ['/privacy', 'Privacy'], ['/terms', 'Terms']]],
+        ['About', (siteConfig().footer_pages || []).map((p) => [p.path, p.title])],
     ];
     return (
         <footer className="torn-top mt-16 bg-navy-900 pb-24 pt-6 text-navy-100 md:pb-0">
@@ -158,7 +159,23 @@ function Footer() {
                 ))}
             </div>
             <div className="border-t border-white/10">
-                <p className="container-page py-4 text-xs text-navy-200">© {new Date().getFullYear()} DoonPortal · Dehradun, Uttarakhand</p>
+                <div className="container-page flex flex-wrap items-center justify-between gap-3 py-4 text-xs text-navy-200">
+                    <p>© {new Date().getFullYear()} DoonPortal · Dehradun, Uttarakhand</p>
+                    <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <Link to="/privacy" className="hover:text-accent-400">
+                            Privacy
+                        </Link>
+                        <Link to="/terms" className="hover:text-accent-400">
+                            Terms
+                        </Link>
+                        <Link to="/cookies" className="hover:text-accent-400">
+                            Cookies
+                        </Link>
+                        <button type="button" onClick={openCookieSettings} className="hover:text-accent-400">
+                            Cookie settings
+                        </button>
+                    </nav>
+                </div>
             </div>
         </footer>
     );

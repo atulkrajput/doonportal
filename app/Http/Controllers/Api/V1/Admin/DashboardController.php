@@ -25,6 +25,7 @@ use App\Models\Story;
 use App\Models\Submission;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Services\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -93,6 +94,19 @@ class DashboardController extends Controller
         ], fn ($v) => $v !== null);
         if ($queues !== []) {
             $data['moderation'] = $queues;
+        }
+
+        if ($can(PermissionName::ManageSettings)) {
+            $legal = app(SiteSettings::class)->get('legal');
+            $missing = array_values(array_filter(SiteSettings::REQUIRED_LEGAL, fn ($k) => blank($legal[$k])));
+            if ($missing !== []) {
+                $data['setup'][] = [
+                    'key' => 'legal',
+                    'message' => 'Legal pages show “(to be published)” until the operator, contact and grievance officer details are filled in.',
+                    'missing' => $missing,
+                    'link' => '/admin/legal',
+                ];
+            }
         }
 
         if ($can(PermissionName::ViewAuditLogs)) {

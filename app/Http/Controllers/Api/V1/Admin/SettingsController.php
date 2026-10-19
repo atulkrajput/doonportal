@@ -18,6 +18,7 @@ class SettingsController extends Controller
         'seo' => PermissionName::ManageSeo,
         'social' => PermissionName::ManageSettings,
         'tracking' => PermissionName::ManageSettings,
+        'legal' => PermissionName::ManageSettings,
     ];
 
     public function show(string $group, SiteSettings $settings): JsonResponse

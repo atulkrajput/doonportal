@@ -9,6 +9,7 @@ use App\Models\Collection;
 use App\Models\Event;
 use App\Models\Media;
 use App\Models\Organizer;
+use App\Models\Page;
 use App\Models\Place;
 use App\Models\Plan;
 use App\Models\Review;
@@ -42,6 +43,7 @@ enum EntityType: string
     case Subscription = 'subscription';
     case Setting = 'setting';
     case SeoMeta = 'seo_meta';
+    case Page = 'page';
 
     /**
      * @return class-string<Model>
@@ -65,6 +67,7 @@ enum EntityType: string
             self::Subscription => Subscription::class,
             self::Setting => Setting::class,
             self::SeoMeta => SeoMeta::class,
+            self::Page => Page::class,
         };
     }
 

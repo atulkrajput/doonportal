@@ -51,7 +51,10 @@ Legend: ✅ in place and tested · 🟡 partial · ⬜ not yet
 - ✅ Social profile URLs must be https on the matching domain; JSON-LD and site config are encoded with `JSON_HEX_TAG` (no `</script>` break-out)
 - ✅ Demo records are `noindex,nofollow`, have no structured data and are excluded from the sitemap (tested)
 - ✅ Monetization: subscriptions cannot be deleted (cancel instead), plans with active subscriptions cannot be deleted, all changes audited; revenue reports only recorded payments
-- 🟡 Third-party tracking (GA4, GTM, Meta Pixel, Clarity) sets cookies when enabled: add a consent banner and update the privacy policy before switching any of them on in production
+- ✅ Cookie consent: third-party tools load only after the visitor accepts their category (analytics / marketing); “Reject all” is as prominent as “Accept all”; choices can be changed from *Cookie settings* in the footer; withdrawal clears tracker cookies; re-consent when the tool set changes (tested: no tracker markup in server HTML, none on `/admin`)
+- ✅ Privacy policy, Terms, Cookie policy, Disclaimer, Community guidelines, About and Contact pages, describing actual data handling; operator and grievance-officer details come from settings and are never invented
+- ✅ Sign-up shows the Terms/Privacy notice and the 18+ requirement
+- 🟡 Legal texts are a starting draft: fill in *Legal details* and have a lawyer review them before launch; consent records are kept only in the visitor’s browser (no server-side consent log yet)
 - ✅ CHECK constraint on review ratings (MySQL/PostgreSQL); unique constraints for one review/favourite per user per entity
 - ⬜ Security headers / CSP / HSTS
 - ⬜ CORS restricted to site origin in production

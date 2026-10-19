@@ -19,7 +19,9 @@ import CollectionDetail from './pages/CollectionDetail';
 import { AreaDetail, AreaList } from './pages/Areas';
 import { Explore, Services } from './pages/Explore';
 import { ForgotPassword, Login, Register, ResetPassword } from './pages/Auth';
-import { BusinessPortal, InfoPage, Saved } from './pages/Static';
+import { BusinessPortal, Saved } from './pages/Static';
+import SitePage from './pages/SitePage';
+import CookieBanner from './components/CookieBanner';
 import NotFound from './pages/NotFound';
 import { PageLoading } from './components/States';
 
@@ -86,6 +88,7 @@ function App() {
         <BrowserRouter>
             <ScrollToTop />
             <SeoManager />
+            <CookieBanner />
             <AuthProvider>
                 <Routes>
                     <Route
@@ -122,9 +125,8 @@ function App() {
                         <Route path="reset-password" element={<ResetPassword />} />
                         <Route path="saved" element={<Saved />} />
                         <Route path="business-portal" element={<BusinessPortal />} />
-                        <Route path="about" element={<InfoPage page="about" />} />
-                        <Route path="privacy" element={<InfoPage page="privacy" />} />
-                        <Route path="terms" element={<InfoPage page="terms" />} />
+                        {/* Editable site pages: /privacy, /terms, /cookies, /about, /contact… */}
+                        <Route path=":slug" element={<SitePage />} />
                         <Route path="*" element={<NotFound />} />
                     </Route>
                 </Routes>

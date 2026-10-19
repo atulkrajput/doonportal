@@ -8,6 +8,7 @@ use App\Models\Business;
 use App\Models\Category;
 use App\Models\Collection;
 use App\Models\Event;
+use App\Models\Page;
 use App\Models\Place;
 use App\Models\SeoMeta;
 use App\Models\Story;
@@ -80,6 +81,7 @@ class SeoFilesController extends Controller
         $add(Story::query()->public(), fn ($s) => ($s->type === StoryType::Guide ? '/guide/' : '/story/').$s->slug);
         $add(Collection::query()->public(), fn ($c) => "/collection/{$c->slug}");
         $add(Area::query()->public(), fn ($a) => "/area/{$a->slug}");
+        $add(Page::query()->public(), fn ($p) => "/{$p->slug}");
         $add(Category::query()->active()->whereIn('type', ['business', 'place']),
             fn ($c) => ($c->type->value === 'business' ? '/businesses/' : '/places/').$c->slug);
 

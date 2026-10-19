@@ -151,11 +151,49 @@ export function SocialSettings() {
     );
 }
 
+export function LegalSettings() {
+    return (
+        <div>
+            <PageIntro title="Legal details">
+                Who operates DoonPortal and how people can reach you. These details fill the placeholders in the Privacy policy, Terms, Contact and other site pages. Until a field is filled in, those pages show “(to be published)” — never a made-up value. Indian law (IT Rules 2021 and the DPDP Act 2023) expects a reachable grievance officer.
+            </PageIntro>
+            <SettingsForm
+                group="legal"
+                sections={[
+                    {
+                        title: 'Operator',
+                        fields: [
+                            { name: 'operator_name', label: 'Legal name of the operator', placeholder: 'Company, firm or individual', help: 'The person or business legally responsible for the site.' },
+                            { name: 'jurisdiction_city', label: 'Courts at (city)', help: 'Used in the Terms (governing law and courts).' },
+                            { name: 'postal_address', label: 'Postal address', type: 'textarea' },
+                        ],
+                    },
+                    {
+                        title: 'Contact',
+                        fields: [
+                            { name: 'contact_email', label: 'Contact email', placeholder: 'hello@…' },
+                            { name: 'contact_phone', label: 'Contact phone (optional)', placeholder: '+91 …' },
+                        ],
+                    },
+                    {
+                        title: 'Grievance officer',
+                        help: 'Complaints about content or personal data go here. Under the IT Rules 2021, complaints must be acknowledged within 24 hours and resolved within 15 days.',
+                        fields: [
+                            { name: 'grievance_officer_name', label: 'Name' },
+                            { name: 'grievance_officer_email', label: 'Email' },
+                        ],
+                    },
+                ]}
+            />
+        </div>
+    );
+}
+
 export function TrackingSettings() {
     return (
         <div>
             <PageIntro title="Tracking codes">
-                Paste only the ID — DoonPortal adds the official snippet for you, on every public page (never inside the admin). Arbitrary scripts are not accepted, so a mistyped or malicious value cannot run on the site. Leave a field empty to switch that tool off. Tell visitors about these tools in the privacy policy.
+                Paste only the ID — DoonPortal adds the official snippet for you, on every public page (never inside the admin). Arbitrary scripts are not accepted, so a mistyped or malicious value cannot run on the site. Leave a field empty to switch that tool off. Tools load only for visitors who accept them in the cookie banner (Analytics: GA4, Tag Manager, Clarity · Marketing: Meta Pixel), and the Cookie policy lists them automatically.
             </PageIntro>
             <SettingsForm
                 group="tracking"

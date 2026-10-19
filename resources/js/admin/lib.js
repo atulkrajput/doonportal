@@ -16,6 +16,7 @@ export const PERMISSIONS = {
     analytics: 'analytics.view',
     seo: 'seo.manage',
     settings: 'settings.manage',
+    pages: 'pages.manage',
 };
 
 export const CONTENT_PERMISSIONS = [

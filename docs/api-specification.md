@@ -98,6 +98,17 @@ Every non-API path is served by `SpaController`, which renders the React shell *
 
 Analytics: `page_view` (properties `{path}`) is sent by the SPA on every public navigation.
 
+## Site pages & cookie consent
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/v1/pages` | Published pages: `slug, title, path, show_in_footer`. |
+| GET | `/api/v1/pages/{slug}` | Published page with `body` rendered: `{{tokens}}` (`site_name`, `operator_name`, `contact_email`, `contact_phone`, `postal_address`, `grievance_officer_name`, `grievance_officer_email`, `jurisdiction_city`, `optional_tools`, `last_updated`) are filled from *Legal details* / tracking settings and HTML-escaped; an empty value renders as “(to be published)”. Drafts → 404. |
+
+Pages are served at `/{slug}` (e.g. `/privacy`, `/terms`, `/cookies`, `/about`, `/contact`, `/disclaimer`, `/community-guidelines`) with server-side SEO (`WebPage`/`AboutPage`/`ContactPage` JSON-LD) and are listed in the sitemap.
+
+**Cookie consent.** The shell's `#site-config` JSON carries `consent.tools` (configured tools grouped as `analytics` = GA4, Tag Manager, Clarity and `marketing` = Meta Pixel), a `consent.version` (changes when the tool set changes, so visitors are asked again) and the tracking IDs (empty on `/admin`). No third-party script is in the HTML: `resources/js/lib/consent.js` loads a tool only after its category is accepted; the choice is stored in `localStorage` for 12 months; withdrawing consent clears the tools' cookies and reloads. Search-engine verification meta tags stay server-side (no cookies).
+
 ## Admin & CMS — `/api/v1/admin`
 
 All routes require `auth:sanctum` and the `admin.access` gate (the user holds at least one permission). Each group adds a permission gate (`can:<permission>`); SUPER_ADMIN passes every gate. Guests get 401; signed-in users without the permission get 403. Records are addressed by **id (ULID)**, not slug. Every write runs in a transaction and is written to `audit_logs` (actor, action, changed fields only as before/after, IP, user agent); no-op updates are not logged.
@@ -206,6 +217,15 @@ Payments are **recorded by staff**; there is no payment gateway yet. Amounts are
 | GET | `/admin/seo/audit` | `seo.manage` | Per type: public count, missing description (not covered by an override), missing cover image, titles > 60 chars, up to 10 examples. |
 
 All settings changes are audited as `settings.{group}_updated` (changed keys only); overrides as `seo_meta.created/updated/deleted`.
+
+### Site pages & legal details
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET/POST | `/admin/pages` | `pages.manage` | `title`, `slug?` (kebab-case, unique, not a reserved site route such as `login` or `events`), `summary?`, `body?` (HTML, sanitized like story bodies), `show_in_footer`, `sort_order`. New pages are DRAFT. |
+| GET/PATCH/DELETE | `/admin/pages/{id}`, `POST …/restore` | `pages.manage` | `show` adds `meta.missing_legal_details`. |
+| POST | `/admin/pages/{id}/status` | `pages.manage` | Publication workflow; a page needs a body to be published (409). |
+| GET/PUT | `/admin/settings/legal` | `settings.manage` | `operator_name`, `contact_email`, `contact_phone`, `postal_address`, `grievance_officer_name`, `grievance_officer_email`, `jurisdiction_city`. Dashboard shows a “Setup needed” notice until the required ones are filled. |
 
 ### Audit log & dashboard
 
