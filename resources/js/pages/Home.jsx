@@ -16,6 +16,35 @@ const FEATURES = [
     { to: '/services', icon: 'users', title: 'Connect', text: 'Businesses, services & community' },
 ];
 
+/** Icon + badge colour per top-level business category (slug from CategorySeeder). */
+const CATEGORY_VISUALS = {
+    'food-drink': { icon: 'utensils', badge: 'bg-accent-500' },
+    shopping: { icon: 'bag', badge: 'bg-pink-600' },
+    'home-services': { icon: 'home', badge: 'bg-amber-500' },
+    'professional-services': { icon: 'briefcase', badge: 'bg-navy-600' },
+    lifestyle: { icon: 'sparkles', badge: 'bg-purple-600' },
+    automotive: { icon: 'car', badge: 'bg-red-600' },
+    education: { icon: 'cap', badge: 'bg-sky-600' },
+    healthcare: { icon: 'medical', badge: 'bg-emerald-600' },
+    'hotels-stays': { icon: 'bed', badge: 'bg-indigo-600' },
+};
+const PLACES_VISUAL = { icon: 'mountain', badge: 'bg-teal-600' };
+const FALLBACK_VISUAL = { icon: 'tag', badge: 'bg-stone-500' };
+
+function CategoryTile({ to, label, visual }) {
+    return (
+        <Link
+            to={to}
+            className="group flex flex-col items-start gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-4 font-semibold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-navy-500 hover:text-navy-700 hover:shadow-md"
+        >
+            <span className={`flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-sm ring-4 ring-white transition-transform group-hover:scale-105 ${visual.badge}`} aria-hidden="true">
+                <Icon name={visual.icon} size={22} />
+            </span>
+            <span className="leading-snug">{label}</span>
+        </Link>
+    );
+}
+
 /** Hand-drawn mountain doodle from the poster. */
 function MountainSketch({ className }) {
     return (
@@ -127,13 +156,9 @@ export default function Home() {
                     <Section title="Explore Doon" subtitle="Browse by category" to="/explore" linkLabel="All categories">
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                             {home.explore_categories.map((c) => (
-                                <Link key={c.id} to={`/businesses/${c.slug}`} className="rounded-2xl border border-stone-200 bg-white px-4 py-5 font-semibold hover:border-navy-500 hover:text-navy-700">
-                                    {c.name}
-                                </Link>
+                                <CategoryTile key={c.id} to={`/businesses/${c.slug}`} label={c.name} visual={CATEGORY_VISUALS[c.slug] || FALLBACK_VISUAL} />
                             ))}
-                            <Link to="/places" className="rounded-2xl border border-stone-200 bg-white px-4 py-5 font-semibold hover:border-navy-500 hover:text-navy-700">
-                                Places & attractions
-                            </Link>
+                            <CategoryTile to="/places" label="Places & attractions" visual={PLACES_VISUAL} />
                         </div>
                     </Section>
 

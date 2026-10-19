@@ -35,6 +35,14 @@ const paths = {
     utensils: 'M7 3v8M5 3v5a2 2 0 004 0V3M7 11v10M16 3c-2 1.5-2.5 4-2.5 7h2.5v11',
     bag: 'M5 8h14l-1 13H6zM9 8V6a3 3 0 016 0v2',
     users: 'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20a6.5 6.5 0 0113 0M16 4.5a3.5 3.5 0 010 6.5M18 14a6 6 0 013.5 6',
+    briefcase: 'M4 8h16v11H4zM9 8V5h6v3M4 13h16',
+    sparkles: 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z',
+    car: 'M5 16V12l2-5h10l2 5v4M3 16h18v3H3zM7 19v1.5M17 19v1.5M5 12h14',
+    cap: 'M2 9l10-5 10 5-10 5zM6 11v5c3 2.5 9 2.5 12 0v-5M22 9v6',
+    medical: 'M9 3h6v6h6v6h-6v6H9v-6H3V9h6z',
+    bed: 'M3 7v13M3 14h18v6M21 14v-3a3 3 0 00-3-3h-8v6M7 11.5a1.5 1.5 0 100-.01',
+    mountain: 'M2 20l7-12 4 6 3-4 6 10zM9 8l1.6 2.6L12 10',
+    tag: 'M3 12V4h8l10 10-8 8zM7.5 8.5a1 1 0 100-.01',
 };
 
 export function Icon({ name, className = '', size = 20, label }) {
