@@ -19,6 +19,7 @@ enum AnalyticsEventName: string
     case ReviewSubmitted = 'review_submitted';
     case BusinessClaimed = 'business_claimed';
     case OfferClicked = 'offer_clicked';
+    case PageViewed = 'page_view';
 
     /**
      * @return list<string>

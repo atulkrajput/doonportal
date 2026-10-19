@@ -10,8 +10,12 @@ use App\Models\Event;
 use App\Models\Media;
 use App\Models\Organizer;
 use App\Models\Place;
+use App\Models\Plan;
 use App\Models\Review;
+use App\Models\SeoMeta;
+use App\Models\Setting;
 use App\Models\Story;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +38,10 @@ enum EntityType: string
     case Review = 'review';
     case User = 'user';
     case Media = 'media';
+    case Plan = 'plan';
+    case Subscription = 'subscription';
+    case Setting = 'setting';
+    case SeoMeta = 'seo_meta';
 
     /**
      * @return class-string<Model>
@@ -53,6 +61,10 @@ enum EntityType: string
             self::Review => Review::class,
             self::User => User::class,
             self::Media => Media::class,
+            self::Plan => Plan::class,
+            self::Subscription => Subscription::class,
+            self::Setting => Setting::class,
+            self::SeoMeta => SeoMeta::class,
         };
     }
 

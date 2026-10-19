@@ -33,6 +33,8 @@ enum RoleName: string
                 PermissionName::ManageStories,
                 PermissionName::ManageCollections,
                 PermissionName::ManageTaxonomy,
+                PermissionName::ManageSeo,
+                PermissionName::ViewAnalytics,
             ],
             self::Moderator => [
                 PermissionName::ModerateReviews,

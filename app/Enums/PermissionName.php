@@ -17,6 +17,10 @@ enum PermissionName: string
     case ManageClaims = 'claims.manage';
     case ViewAuditLogs = 'audit.view';
     case ManageAi = 'ai.manage';
+    case ManageMonetization = 'monetization.manage';
+    case ViewAnalytics = 'analytics.view';
+    case ManageSeo = 'seo.manage';
+    case ManageSettings = 'settings.manage';
 
     /**
      * Permissions that edit public content (and may therefore upload media).
