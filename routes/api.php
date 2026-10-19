@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\PermissionName;
+use App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
@@ -81,4 +83,60 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     Route::post('analytics/events', [AnalyticsController::class, 'store'])
         ->middleware('throttle:analytics')->name('analytics.store');
+
+    // Admin & CMS. Records are addressed by id (ULID), not slug. Every group is
+    // gated by a permission; SUPER_ADMIN passes all gates via Gate::before.
+    Route::prefix('admin')->name('admin.')->middleware(['auth:sanctum', 'can:admin.access'])->group(function () {
+        Route::get('dashboard', Admin\DashboardController::class)->name('dashboard');
+
+        $content = [
+            'businesses' => [Admin\BusinessController::class, 'business', PermissionName::ManageBusinesses, true],
+            'places' => [Admin\PlaceController::class, 'place', PermissionName::ManagePlaces, true],
+            'events' => [Admin\EventController::class, 'event', PermissionName::ManageEvents, true],
+            'venues' => [Admin\VenueController::class, 'venue', PermissionName::ManageEvents, false],
+            'organizers' => [Admin\OrganizerController::class, 'organizer', PermissionName::ManageEvents, false],
+            'stories' => [Admin\StoryController::class, 'story', PermissionName::ManageStories, true],
+            'collections' => [Admin\CollectionController::class, 'collection', PermissionName::ManageCollections, true],
+            'areas' => [Admin\AreaController::class, 'area', PermissionName::ManageTaxonomy, false],
+            'categories' => [Admin\CategoryController::class, 'category', PermissionName::ManageTaxonomy, false],
+        ];
+
+        foreach ($content as $uri => [$controller, $param, $permission, $hasStatus]) {
+            Route::controller($controller)->prefix($uri)->name("{$uri}.")
+                ->middleware('can:'.$permission->value)
+                ->group(function () use ($param, $hasStatus) {
+                    Route::get('/', 'index')->name('index');
+                    Route::post('/', 'store')->name('store');
+                    Route::get("{{$param}:id}", 'show')->name('show')->withTrashed();
+                    Route::patch("{{$param}:id}", 'update')->name('update');
+                    Route::delete("{{$param}:id}", 'destroy')->name('destroy');
+                    Route::post("{{$param}:id}/restore", 'restore')->name('restore')->withTrashed();
+                    if ($hasStatus) {
+                        Route::post("{{$param}:id}/status", 'status')->name('status');
+                    }
+                });
+        }
+
+        Route::post('events/{event:id}/reschedule', [Admin\EventController::class, 'reschedule'])
+            ->middleware('can:'.PermissionName::ManageEvents->value)->name('events.reschedule');
+        Route::put('collections/{collection:id}/items', [Admin\CollectionController::class, 'items'])
+            ->middleware('can:'.PermissionName::ManageCollections->value)->name('collections.items');
+
+        Route::controller(Admin\MediaController::class)->prefix('media')->name('media.')
+            ->middleware('can:media.upload')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->middleware('throttle:30,1')->name('store');
+                Route::patch('{media:id}', 'update')->name('update');
+            });
+
+        Route::controller(Admin\UserController::class)->prefix('users')->name('users.')
+            ->middleware('can:'.PermissionName::ManageUsers->value)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('{user:id}', 'show')->name('show');
+                Route::put('{user:id}/roles', 'updateRoles')->name('roles');
+            });
+
+        Route::get('audit-logs', [Admin\AuditLogController::class, 'index'])
+            ->middleware('can:'.PermissionName::ViewAuditLogs->value)->name('audit-logs.index');
+    });
 });

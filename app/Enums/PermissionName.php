@@ -17,4 +17,17 @@ enum PermissionName: string
     case ManageClaims = 'claims.manage';
     case ViewAuditLogs = 'audit.view';
     case ManageAi = 'ai.manage';
+
+    /**
+     * Permissions that edit public content (and may therefore upload media).
+     *
+     * @return list<self>
+     */
+    public static function contentManagement(): array
+    {
+        return [
+            self::ManageBusinesses, self::ManagePlaces, self::ManageEvents,
+            self::ManageStories, self::ManageCollections, self::ManageTaxonomy,
+        ];
+    }
 }

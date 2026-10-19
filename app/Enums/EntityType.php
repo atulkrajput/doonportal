@@ -7,6 +7,7 @@ use App\Models\Business;
 use App\Models\Category;
 use App\Models\Collection;
 use App\Models\Event;
+use App\Models\Media;
 use App\Models\Organizer;
 use App\Models\Place;
 use App\Models\Review;
@@ -32,6 +33,7 @@ enum EntityType: string
     case Organizer = 'organizer';
     case Review = 'review';
     case User = 'user';
+    case Media = 'media';
 
     /**
      * @return class-string<Model>
@@ -50,6 +52,7 @@ enum EntityType: string
             self::Organizer => Organizer::class,
             self::Review => Review::class,
             self::User => User::class,
+            self::Media => Media::class,
         };
     }
 

@@ -52,6 +52,12 @@ class AppServiceProvider extends ServiceProvider
             Gate::define($permission->value, fn (User $user) => $user->hasPermission($permission));
         }
 
+        // Staff area: any user holding at least one permission.
+        Gate::define('admin.access', fn (User $user) => $user->permissionNames() !== []);
+
+        Gate::define('media.upload', fn (User $user) => collect(PermissionName::contentManagement())
+            ->contains(fn (PermissionName $p) => $user->hasPermission($p)));
+
         ResetPassword::createUrlUsing(fn (User $user, string $token) => url('/reset-password').'?'.http_build_query([
             'token' => $token,
             'email' => $user->getEmailForPasswordReset(),

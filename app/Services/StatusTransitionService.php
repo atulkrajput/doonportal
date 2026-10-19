@@ -4,15 +4,20 @@ namespace App\Services;
 
 use App\Enums\BusinessStatus;
 use App\Enums\EventStatus;
+use App\Enums\PublicationStatus;
 use App\Exceptions\InvalidStatusTransition;
 use App\Models\Business;
+use App\Models\Collection;
 use App\Models\Event;
+use App\Models\Place;
+use App\Models\Story;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The only place business verification and event lifecycle statuses change.
- * Every transition is validated, atomic and audited.
+ * The only place business verification, event lifecycle and editorial publication
+ * statuses change. Every transition is validated, atomic and audited.
  */
 class StatusTransitionService
 {
@@ -85,6 +90,87 @@ class StatusTransitionService
                 ['status' => $from], ['status' => $to, 'note' => $note], $actor);
 
             return $event;
+        });
+    }
+
+    /**
+     * Move an event to new dates. Once an event has been announced (published or
+     * cancelled), its first announced start is kept in original_starts_at.
+     */
+    public function rescheduleEvent(Event $event, CarbonInterface $startsAt, ?CarbonInterface $endsAt, ?User $actor = null, ?string $reason = null): Event
+    {
+        $old = ['starts_at' => $event->starts_at, 'ends_at' => $event->ends_at, 'original_starts_at' => $event->original_starts_at];
+        $announced = in_array($event->status->value, EventStatus::publicValues(), true);
+
+        $event->starts_at = $startsAt;
+        $event->ends_at = $endsAt;
+
+        try {
+            if ($announced) {
+                $this->assertPublishableDates($event);
+            } elseif ($endsAt !== null && $endsAt->lt($startsAt)) {
+                throw new InvalidStatusTransition('An event cannot end before it starts.');
+            }
+        } catch (InvalidStatusTransition $e) {
+            $event->starts_at = $old['starts_at'];
+            $event->ends_at = $old['ends_at'];
+
+            throw $e;
+        }
+
+        return DB::transaction(function () use ($event, $old, $announced, $actor, $reason) {
+            if ($announced && $event->original_starts_at === null && $old['starts_at'] !== null
+                && ! $old['starts_at']->equalTo($event->starts_at)) {
+                $event->original_starts_at = $old['starts_at'];
+            }
+
+            $event->save();
+
+            $this->audit->log('event.rescheduled', $event, $old, [
+                'starts_at' => $event->starts_at,
+                'ends_at' => $event->ends_at,
+                'original_starts_at' => $event->original_starts_at,
+                'reason' => $reason,
+            ], $actor);
+
+            return $event;
+        });
+    }
+
+    /**
+     * Editorial workflow for places, stories and collections.
+     */
+    public function transitionPublication(Place|Story|Collection $model, PublicationStatus $to, ?User $actor = null, ?string $note = null): Place|Story|Collection
+    {
+        $from = $model->status;
+        $type = $model->getMorphClass();
+
+        if (! $from->canTransitionTo($to)) {
+            throw new InvalidStatusTransition("A {$type} cannot move from {$from->value} to {$to->value}.");
+        }
+
+        if ($to === PublicationStatus::Published) {
+            if ($model instanceof Story && blank(trim(strip_tags((string) $model->body)))) {
+                throw new InvalidStatusTransition('A story needs a body before it can be published.');
+            }
+            if ($model instanceof Collection && ! $model->items()->exists()) {
+                throw new InvalidStatusTransition('A collection needs at least one item before it can be published.');
+            }
+        }
+
+        return DB::transaction(function () use ($model, $from, $to, $actor, $note, $type) {
+            $model->status = $to;
+
+            if ($to === PublicationStatus::Published && $model->published_at === null) {
+                $model->published_at = now();
+            }
+
+            $model->save();
+
+            $this->audit->log("{$type}.status_changed", $model,
+                ['status' => $from], ['status' => $to, 'note' => $note], $actor);
+
+            return $model;
         });
     }
 
