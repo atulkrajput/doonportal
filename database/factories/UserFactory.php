@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\RoleName;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -41,5 +43,13 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function withRole(RoleName $role): static
+    {
+        return $this->afterCreating(function (User $user) use ($role) {
+            Role::firstOrCreate(['name' => $role->value], ['label' => $role->label()]);
+            $user->assignRole($role);
+        });
     }
 }
