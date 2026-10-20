@@ -1,12 +1,21 @@
 version: 2.1
 
+# Deploys over FTP with lftp's mirror (rsync-style: uploads only changed files and
+# deletes files removed from the repo). FTP can't run commands on the server, so
+# production vendor/ and public/build are built here and uploaded.
+#
 # Required project environment variables (CircleCI > Project Settings > Environment Variables):
-#   DEPLOY_HOST  - server hostname or IP
-#   DEPLOY_USER  - SSH user on the server
-#   DEPLOY_PATH  - absolute path of the app on the server (e.g. /home/user/public_html)
-#   DEPLOY_PORT  - SSH port (optional, defaults to 22)
-# Also add the deploy SSH private key under Project Settings > SSH Keys and
-# put its fingerprint in the add_ssh_keys step below.
+#   FTP_HOST      - FTP server hostname
+#   FTP_USER      - FTP username
+#   FTP_PASSWORD  - FTP password
+#   FTP_PATH      - remote app directory, relative to the FTP login root (e.g. public_html)
+#   FTP_PORT      - FTP port (optional, defaults to 21)
+#   FTP_VERIFY_CERT - set to "no" only if the host's FTPS certificate doesn't match FTP_HOST
+#
+# Never uploaded or deleted on the server: .env, storage/app, storage/logs,
+# storage/framework/{cache,sessions,views} and public/storage. Create the server's
+# .env by hand once. Migrations can't run over FTP: run `php artisan migrate --force`
+# from the host's terminal (e.g. cPanel) when a deploy adds one.
 
 executors:
   php:
@@ -63,46 +72,44 @@ jobs:
       - checkout
       - attach_workspace:
           at: ~/app
-      - add_ssh_keys:
-          fingerprints:
-            - "SHA256:REPLACE_WITH_YOUR_DEPLOY_KEY_FINGERPRINT"
+      - restore_cache:
+          keys:
+            - composer-nodev-v1-{{ checksum "composer.lock" }}
+            - composer-nodev-v1-
       - run:
-          name: Add server to known hosts
-          command: ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          name: Install production Composer dependencies
+          command: composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
+      - save_cache:
+          key: composer-nodev-v1-{{ checksum "composer.lock" }}
+          paths:
+            - vendor
       - run:
-          name: Install rsync
-          command: sudo apt-get update && sudo apt-get install -y rsync
+          name: Install lftp
+          command: sudo apt-get update && sudo apt-get install -y lftp
       - run:
-          name: Sync files to server
+          name: Sync files to server over FTP
           command: |
-            rsync -az --delete \
-              -e "ssh -p ${DEPLOY_PORT:-22}" \
-              --exclude='.git' \
-              --exclude='.circleci' \
-              --exclude='.github' \
-              --exclude='.env' \
-              --exclude='node_modules' \
-              --exclude='vendor' \
-              --exclude='tests' \
-              --exclude='storage/app/*' \
-              --exclude='storage/framework/cache/*' \
-              --exclude='storage/framework/sessions/*' \
-              --exclude='storage/framework/views/*' \
-              --exclude='storage/logs/*' \
-              --exclude='public/storage' \
-              ./ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"
-      - run:
-          name: Run post-deploy commands
-          command: |
-            ssh -p "${DEPLOY_PORT:-22}" "$DEPLOY_USER@$DEPLOY_HOST" bash -se <<EOSSH
-            set -e
-            cd "$DEPLOY_PATH"
-            composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-            php artisan migrate --force
-            [ -L public/storage ] || php artisan storage:link
-            php artisan optimize:clear
-            php artisan optimize
-            EOSSH
+            lftp -u "$FTP_USER","$FTP_PASSWORD" -p "${FTP_PORT:-21}" "$FTP_HOST" <<EOF
+            set ftp:ssl-allow true
+            set ssl:verify-certificate ${FTP_VERIFY_CERT:-yes}
+            set net:max-retries 3
+            set net:timeout 30
+            mirror --reverse --delete --verbose --parallel=4 \
+              -x '^\.git/' \
+              -x '^\.github/' \
+              -x '^\.circleci/' \
+              -x '^\.claude/' \
+              -x '^\.env' \
+              -x '^node_modules/' \
+              -x '^tests/' \
+              -x '^storage/app/' \
+              -x '^storage/logs/' \
+              -x '^storage/framework/(cache|sessions|views)/' \
+              -x '^public/storage' \
+              -x '^phpunit\.xml$' \
+              ./ "$FTP_PATH"
+            bye
+            EOF
 
 workflows:
   build-and-deploy:
