@@ -73,6 +73,8 @@ class SpaRoutingTest extends TestCase
             ->assertDontSee('LocalBusiness', false);
         $this->get('/login')->assertOk()->assertSee('content="noindex,follow"', false);
         $this->get('/admin/businesses')->assertOk()->assertSee('content="noindex,nofollow"', false);
+        $this->get('/account')->assertOk()->assertSee('content="noindex,nofollow"', false);
+        $this->get('/account/businesses/01arz3ndektsv4rrffq69g5fav')->assertOk()->assertSee('content="noindex,nofollow"', false);
     }
 
     public function test_overrides_and_settings_apply(): void

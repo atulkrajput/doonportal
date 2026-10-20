@@ -3,6 +3,12 @@ import { useApi } from '../../hooks/useApi';
 import { ErrorState, PageLoading } from '../../components/States';
 import { formatDateTime, formatMoney, formatNumber, humanize } from '../lib';
 
+const QUEUE_LINKS = {
+    claims_pending: '/admin/claims',
+    submissions_pending: '/admin/submissions',
+    reviews_pending: '/admin/reviews',
+};
+
 function Card({ title, to, total, children }) {
     return (
         <section className="rounded-2xl border border-stone-200 bg-white p-4">
@@ -118,12 +124,17 @@ export default function Dashboard() {
                         <ul className="mt-2 space-y-1 text-sm">
                             {Object.entries(d.moderation).map(([k, n]) => (
                                 <li key={k} className="flex justify-between">
-                                    <span>{humanize(k)}</span>
-                                    <span className="font-semibold tabular-nums">{n}</span>
+                                    {QUEUE_LINKS[k] ? (
+                                        <Link to={QUEUE_LINKS[k]} className="text-navy-700 hover:underline">
+                                            {humanize(k)}
+                                        </Link>
+                                    ) : (
+                                        <span>{humanize(k)}</span>
+                                    )}
+                                    <span className={`font-semibold tabular-nums ${n > 0 && QUEUE_LINKS[k] ? 'text-accent-600' : ''}`}>{n}</span>
                                 </li>
                             ))}
                         </ul>
-                        <p className="mt-2 text-xs text-stone-500">Moderation screens arrive with phases 4–5.</p>
                     </Card>
                 )}
             </div>

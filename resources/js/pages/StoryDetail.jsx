@@ -7,6 +7,7 @@ import { formatDate } from '../lib/format';
 import { Cover, EntityCard } from '../components/Cards';
 import { DemoBadge } from '../components/Badges';
 import { Breadcrumbs, DetailGate } from '../components/Detail';
+import { SaveButton } from '../context/SavedContext';
 
 const ALLOWED_TAGS = ['p', 'h2', 'h3', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'br', 'figure', 'figcaption', 'img'];
 
@@ -34,6 +35,9 @@ function StoryView({ story }) {
             <p className="mt-4 text-sm text-stone-500">
                 {[story.author?.name && `By ${story.author.name}`, formatDate(story.published_at), story.reading_minutes && `${story.reading_minutes} min read`].filter(Boolean).join(' · ')}
             </p>
+            <div className="mt-4">
+                <SaveButton type="story" id={story.id} label="Save for later" />
+            </div>
             <div className="mt-6 overflow-hidden rounded-2xl">
                 <Cover src={story.cover?.url} alt={story.cover?.alt} title={story.title} type="story" className="aspect-[16/9]" />
             </div>

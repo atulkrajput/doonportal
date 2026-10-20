@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    // "Sign in with Google": the OAuth client ID from Google Cloud Console
+    // (APIs & Services > Credentials > OAuth client ID > Web application).
+    // Leave empty to hide the Google button. No client secret is needed: the
+    // browser gets an ID token and the API checks it with Google.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+    ],
+
 ];

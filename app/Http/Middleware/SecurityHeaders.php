@@ -36,6 +36,9 @@ class SecurityHeaders
         'https://connect.facebook.net',
     ];
 
+    /** Sign in with Google (Google Identity Services): script, button iframe and its styles. */
+    private const GOOGLE_SIGN_IN = 'https://accounts.google.com/gsi/';
+
     private const TRACKER_FRAMES = [
         'https://www.googletagmanager.com', // GTM preview mode
         'https://td.doubleclick.net',       // GA4 / Ads conversion frame
@@ -80,14 +83,14 @@ class SecurityHeaders
             'object-src' => ["'none'"],
             'frame-ancestors' => ["'none'"],
             'form-action' => ["'self'"],
-            'script-src' => ["'self'", "'nonce-{$nonce}'", ...$dev, ...self::TRACKER_SCRIPTS],
+            'script-src' => ["'self'", "'nonce-{$nonce}'", ...$dev, ...self::TRACKER_SCRIPTS, self::GOOGLE_SIGN_IN.'client'],
             // Inline styles: the noscript fallback, React style props and Vite's dev CSS injection.
-            'style-src' => ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', ...$dev],
+            'style-src' => ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', ...$dev, self::GOOGLE_SIGN_IN.'style'],
             'font-src' => ["'self'", 'data:', 'https://fonts.gstatic.com', ...$dev],
             // Media may be served from an external disk/CDN; tracker pixels are images too.
             'img-src' => ["'self'", 'data:', 'blob:', 'https:', ...$dev],
-            'connect-src' => ["'self'", ...$dev, ...array_map(fn ($o) => preg_replace('#^http#', 'ws', $o), $dev), ...self::TRACKER_CONNECT],
-            'frame-src' => ["'self'", ...self::TRACKER_FRAMES],
+            'connect-src' => ["'self'", ...$dev, ...array_map(fn ($o) => preg_replace('#^http#', 'ws', $o), $dev), ...self::TRACKER_CONNECT, self::GOOGLE_SIGN_IN],
+            'frame-src' => ["'self'", ...self::TRACKER_FRAMES, self::GOOGLE_SIGN_IN],
             'worker-src' => ["'self'", 'blob:'],
             'manifest-src' => ["'self'"],
         ];

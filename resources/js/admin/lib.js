@@ -17,6 +17,9 @@ export const PERMISSIONS = {
     seo: 'seo.manage',
     settings: 'settings.manage',
     pages: 'pages.manage',
+    claims: 'claims.manage',
+    submissions: 'submissions.moderate',
+    reviews: 'reviews.moderate',
 };
 
 export const CONTENT_PERMISSIONS = [

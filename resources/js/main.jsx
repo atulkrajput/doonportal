@@ -1,7 +1,8 @@
 import { StrictMode, Suspense, lazy, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { AuthProvider } from './context/AuthContext';
+import { SavedProvider } from './context/SavedContext';
 import Layout from './components/Layout';
 import SeoManager from './components/SeoManager';
 import Home from './pages/Home';
@@ -19,7 +20,7 @@ import CollectionDetail from './pages/CollectionDetail';
 import { AreaDetail, AreaList } from './pages/Areas';
 import { Explore, Services } from './pages/Explore';
 import { ForgotPassword, Login, Register, ResetPassword } from './pages/Auth';
-import { BusinessPortal, Saved } from './pages/Static';
+import { BusinessPortal } from './pages/Static';
 import SitePage from './pages/SitePage';
 import CookieBanner from './components/CookieBanner';
 import NotFound from './pages/NotFound';
@@ -27,6 +28,8 @@ import { PageLoading } from './components/States';
 
 // Staff-only code is split into its own chunk and never loaded by public visitors.
 const AdminApp = lazy(() => loadChunk(() => import('./admin/AdminApp')));
+// Members' area: only signed-in members need it.
+const AccountApp = lazy(() => loadChunk(() => import('./pages/account/AccountApp')));
 
 /**
  * A chunk can fail to load after a deploy (old file names) or a network blip.
@@ -90,6 +93,7 @@ function App() {
             <SeoManager />
             <CookieBanner />
             <AuthProvider>
+                <SavedProvider>
                 <Routes>
                     <Route
                         path="admin/*"
@@ -123,13 +127,22 @@ function App() {
                         <Route path="register" element={<Register />} />
                         <Route path="forgot-password" element={<ForgotPassword />} />
                         <Route path="reset-password" element={<ResetPassword />} />
-                        <Route path="saved" element={<Saved />} />
+                        <Route path="saved" element={<Navigate to="/account/saved" replace />} />
+                        <Route
+                            path="account/*"
+                            element={
+                                <Suspense fallback={<PageLoading />}>
+                                    <AccountApp />
+                                </Suspense>
+                            }
+                        />
                         <Route path="business-portal" element={<BusinessPortal />} />
                         {/* Editable site pages: /privacy, /terms, /cookies, /about, /contact… */}
                         <Route path=":slug" element={<SitePage />} />
                         <Route path="*" element={<NotFound />} />
                     </Route>
                 </Routes>
+                </SavedProvider>
             </AuthProvider>
         </BrowserRouter>
     );

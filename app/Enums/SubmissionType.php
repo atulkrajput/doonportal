@@ -9,6 +9,8 @@ enum SubmissionType: string
     case Event = 'EVENT';
     case Correction = 'CORRECTION';
     case Photo = 'PHOTO';
+    /** An owner's proposed changes to their own listing; applied only when approved. */
+    case OwnerEdit = 'OWNER_EDIT';
 
     /**
      * @return list<string>

@@ -4,6 +4,7 @@ namespace App\Enums;
 
 use App\Models\Area;
 use App\Models\Business;
+use App\Models\BusinessClaim;
 use App\Models\Category;
 use App\Models\Collection;
 use App\Models\Event;
@@ -16,6 +17,7 @@ use App\Models\Review;
 use App\Models\SeoMeta;
 use App\Models\Setting;
 use App\Models\Story;
+use App\Models\Submission;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Venue;
@@ -44,6 +46,8 @@ enum EntityType: string
     case Setting = 'setting';
     case SeoMeta = 'seo_meta';
     case Page = 'page';
+    case Submission = 'submission';
+    case BusinessClaim = 'business_claim';
 
     /**
      * @return class-string<Model>
@@ -68,6 +72,8 @@ enum EntityType: string
             self::Setting => Setting::class,
             self::SeoMeta => SeoMeta::class,
             self::Page => Page::class,
+            self::Submission => Submission::class,
+            self::BusinessClaim => BusinessClaim::class,
         };
     }
 

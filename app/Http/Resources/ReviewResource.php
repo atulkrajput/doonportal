@@ -23,6 +23,10 @@ class ReviewResource extends JsonResource
             'visited_on' => $this->visited_on?->toDateString(),
             'helpful_count' => $this->helpful_count,
             'author' => $this->whenLoaded('user', fn () => ['name' => $this->user?->name]),
+            'owner_reply' => $this->owner_reply ? [
+                'body' => $this->owner_reply,
+                'replied_at' => $this->owner_replied_at?->toIso8601String(),
+            ] : null,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

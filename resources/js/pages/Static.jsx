@@ -1,60 +1,65 @@
 import { Link } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { PageHeader } from '../components/Listing';
-import { EmptyState } from '../components/States';
-
-export function Saved() {
-    const { user, ready, logout } = useAuth();
-
-    if (!ready) {
-        return null;
-    }
-    if (!user) {
-        return (
-            <>
-                <PageHeader eyebrow="Saved" title="My DoonPortal" />
-                <div className="container-page py-8">
-                    <EmptyState title="Sign in to save places, events and businesses" action={<Link to="/login" className="btn-primary">Sign in</Link>} />
-                </div>
-            </>
-        );
-    }
-    return (
-        <>
-            <PageHeader eyebrow="Saved" title={`Hi, ${user.name}`} />
-            <div className="container-page space-y-6 py-8">
-                <EmptyState title="Saving is coming soon">Favourites, reviews and your submissions will appear here.</EmptyState>
-                <button type="button" className="btn-secondary" onClick={logout}>
-                    Sign out
-                </button>
-            </div>
-        </>
-    );
-}
+import { Icon } from '../components/Icons';
 
 export function BusinessPortal() {
+    const { user } = useAuth();
+    const addTo = user ? '/account/businesses/new' : `/register?next=${encodeURIComponent('/account/businesses/new')}`;
+    const steps = [
+        ['store', 'List for free', 'Add your business with its address, phone, WhatsApp and website. Our team checks it and it goes live, usually within 2 working days.'],
+        ['flag', 'Claim your listing', 'Already on DoonPortal? Open your listing and choose “Claim this listing”. We verify you, then it’s yours to manage.'],
+        ['settings', 'Keep it right', 'Update opening hours, services and menu, contact details and social links from your account. We check changes before they go live.'],
+        ['star', 'Talk to customers', 'Reply publicly to reviews and show people you care.'],
+        ['chart', 'See what works', 'Track listing views, calls, WhatsApp chats, direction requests and website visits.'],
+        ['shield', 'Trusted by locals', 'Listings our team has checked get a verified badge, so people know the details are right.'],
+    ];
     return (
         <>
             <PageHeader eyebrow="For business" title="Your business on DoonPortal">
-                A free, accurate listing that helps people in Dehradun find you.
+                A free, accurate listing that helps people in Dehradun find you, call you and visit.
             </PageHeader>
-            <div className="container-page grid gap-6 py-8 md:grid-cols-3">
-                {[
-                    ['List for free', 'Basic profile, contact details, map location and photos.'],
-                    ['Claim your listing', 'Already listed? Verify ownership to update hours, photos and offers.'],
-                    ['See what works', 'Owners will get simple analytics on calls, directions and website visits.'],
-                ].map(([title, text]) => (
-                    <div key={title} className="rounded-2xl border border-stone-200 bg-white p-6">
-                        <h2 className="font-display text-xl font-bold">{title}</h2>
-                        <p className="mt-2 text-stone-600">{text}</p>
-                    </div>
-                ))}
-                <div className="rounded-2xl bg-accent-100 p-6 md:col-span-3">
-                    <p className="font-semibold">The business portal is being built.</p>
-                    <p className="mt-1 text-stone-700">Listing submissions and ownership claims open in an upcoming release. Create an account now and you’ll be ready.</p>
-                    <Link to="/register" className="btn-primary mt-4">
-                        Create an account
+            <div className="container-page space-y-8 py-8">
+                <div className="flex flex-wrap gap-3">
+                    <Link to={addTo} className="btn-primary">
+                        <Icon name="store" size={16} /> Add your business
                     </Link>
+                    <Link to="/businesses" className="btn-secondary">
+                        <Icon name="search" size={16} /> Find your listing to claim
+                    </Link>
+                    {user?.is_business_owner && (
+                        <Link to="/account/businesses" className="btn-secondary">
+                            Go to my businesses
+                        </Link>
+                    )}
+                </div>
+                <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {steps.map(([icon, title, text], i) => (
+                        <li key={title} className="rounded-2xl border border-stone-200 bg-white p-6">
+                            <span className={`icon-badge ${i % 2 ? 'icon-badge-accent' : ''}`}>
+                                <Icon name={icon} />
+                            </span>
+                            <h2 className="mt-3 font-display text-xl font-bold">{title}</h2>
+                            <p className="mt-2 text-stone-600">{text}</p>
+                        </li>
+                    ))}
+                </ul>
+                <div className="rounded-2xl bg-navy-900 p-6 text-white sm:p-8">
+                    <p className="font-display text-2xl font-bold">How it works</p>
+                    <ol className="mt-4 grid gap-4 text-navy-100 sm:grid-cols-3">
+                        <li>
+                            <span className="font-display text-3xl font-bold text-accent-400">1</span>
+                            <p className="mt-1">Create a free account, with Google or your email.</p>
+                        </li>
+                        <li>
+                            <span className="font-display text-3xl font-bold text-accent-400">2</span>
+                            <p className="mt-1">Add your business or claim your existing listing.</p>
+                        </li>
+                        <li>
+                            <span className="font-display text-3xl font-bold text-accent-400">3</span>
+                            <p className="mt-1">Once approved, manage it any time from My businesses.</p>
+                        </li>
+                    </ol>
                 </div>
             </div>
         </>

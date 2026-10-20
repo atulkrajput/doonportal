@@ -30,6 +30,7 @@ class Review extends Model
             'visited_on' => 'date',
             'helpful_count' => 'integer',
             'moderated_at' => 'datetime',
+            'owner_replied_at' => 'datetime',
         ];
     }
 

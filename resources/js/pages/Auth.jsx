@@ -1,22 +1,8 @@
-import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { api, errorMessage, fieldErrors } from '../api/client';
+import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-
-function Field({ label, name, type = 'text', errors, ...props }) {
-    const error = errors?.[name]?.[0];
-    return (
-        <label className="block">
-            <span className="text-sm font-medium text-stone-700">{label}</span>
-            <input name={name} type={type} className="input mt-1" aria-invalid={Boolean(error)} aria-describedby={error ? `${name}-error` : undefined} {...props} />
-            {error && (
-                <span id={`${name}-error`} className="mt-1 block text-sm text-red-700">
-                    {error}
-                </span>
-            )}
-        </label>
-    );
-}
+import { Field, Message, PhoneField, useForm } from '../components/Form';
+import GoogleButton, { OrDivider, googleSignInEnabled } from '../components/GoogleButton';
 
 function AuthCard({ title, children, footer }) {
     return (
@@ -30,52 +16,55 @@ function AuthCard({ title, children, footer }) {
     );
 }
 
-function useForm(submit) {
-    const [errors, setErrors] = useState({});
-    const [message, setMessage] = useState(null);
-    const [busy, setBusy] = useState(false);
-    const onSubmit = async (e) => {
-        e.preventDefault();
-        setBusy(true);
-        setErrors({});
-        setMessage(null);
-        try {
-            await submit(Object.fromEntries(new FormData(e.currentTarget).entries()));
-        } catch (err) {
-            setErrors(fieldErrors(err));
-            setMessage({ type: 'error', text: errorMessage(err) });
-        } finally {
-            setBusy(false);
-        }
-    };
-    return { errors, message, setMessage, busy, onSubmit };
+/** Where to go after signing in: ?next= when it is a same-site path, else the account. */
+function useNextPath() {
+    const [searchParams] = useSearchParams();
+    // Only same-site paths: "//host" or "/\host" would be an open redirect.
+    const next = searchParams.get('next') || '';
+    return /^\/(?![/\\])/.test(next) ? next : '/account';
 }
 
-function Message({ message }) {
-    if (!message) {
+/** Carry ?next= across the sign-in / sign-up switch. */
+function useNextQuery() {
+    const [searchParams] = useSearchParams();
+    const next = searchParams.get('next');
+    return next ? `?next=${encodeURIComponent(next)}` : '';
+}
+
+function GoogleSignIn({ text }) {
+    const { loginWithGoogle } = useAuth();
+    const navigate = useNavigate();
+    const target = useNextPath();
+    if (!googleSignInEnabled()) {
         return null;
     }
     return (
-        <p role={message.type === 'error' ? 'alert' : 'status'} className={`rounded-xl p-3 text-sm ${message.type === 'error' ? 'bg-red-50 text-red-800' : 'bg-navy-50 text-navy-700'}`}>
-            {message.text}
-        </p>
+        <>
+            <GoogleButton
+                text={text}
+                onCredential={async (credential) => {
+                    await loginWithGoogle(credential);
+                    navigate(target);
+                }}
+            />
+            <OrDivider />
+        </>
     );
 }
 
 export function Login() {
     const { login } = useAuth();
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    // Only same-site paths: "//host" or "/\host" would be an open redirect.
-    const next = searchParams.get('next') || '';
-    const target = /^\/(?![/\\])/.test(next) ? next : '/saved';
+    const target = useNextPath();
+    const nextQuery = useNextQuery();
     const form = useForm(async (values) => {
         await login(values);
         navigate(target);
     });
 
     return (
-        <AuthCard title="Sign in" footer={<>New here? <Link to="/register" className="font-semibold text-navy-700">Create an account</Link></>}>
+        <AuthCard title="Sign in" footer={<>New here? <Link to={`/register${nextQuery}`} className="font-semibold text-navy-700">Create an account</Link></>}>
+            <GoogleSignIn text="signin_with" />
             <form onSubmit={form.onSubmit} className="space-y-4" noValidate>
                 <Message message={form.message} />
                 <Field label="Email" name="email" type="email" autoComplete="email" required errors={form.errors} />
@@ -94,17 +83,21 @@ export function Login() {
 export function Register() {
     const { register } = useAuth();
     const navigate = useNavigate();
+    const target = useNextPath();
+    const nextQuery = useNextQuery();
     const form = useForm(async (values) => {
         await register(values);
-        navigate('/saved');
+        navigate(target);
     });
 
     return (
-        <AuthCard title="Join DoonPortal" footer={<>Already a member? <Link to="/login" className="font-semibold text-navy-700">Sign in</Link></>}>
+        <AuthCard title="Join DoonPortal" footer={<>Already a member? <Link to={`/login${nextQuery}`} className="font-semibold text-navy-700">Sign in</Link></>}>
+            <GoogleSignIn text="signup_with" />
             <form onSubmit={form.onSubmit} className="space-y-4" noValidate>
                 <Message message={form.message} />
                 <Field label="Name" name="name" autoComplete="name" required errors={form.errors} />
                 <Field label="Email" name="email" type="email" autoComplete="email" required errors={form.errors} />
+                <PhoneField optional errors={form.errors} help="Only used to contact you about your account or listings. Never shown publicly." />
                 <Field label="Password" name="password" type="password" autoComplete="new-password" required errors={form.errors} />
                 <Field label="Confirm password" name="password_confirmation" type="password" autoComplete="new-password" required errors={form.errors} />
                 <p className="text-xs text-stone-600">
@@ -116,7 +109,7 @@ export function Register() {
                     <Link to="/privacy" className="font-semibold text-navy-700 underline">
                         Privacy policy
                     </Link>
-                    . You must be 18 or older.
+                    . You must be 18 or older.{googleSignInEnabled() && ' Signing up with Google means the same.'}
                 </p>
                 <button type="submit" className="btn-primary w-full" disabled={form.busy}>
                     {form.busy ? 'Creating account…' : 'Create account'}

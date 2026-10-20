@@ -37,6 +37,7 @@ CI (`.github/workflows/tests.yml`) runs the same on PHP 8.2/8.3 against SQLite a
 - [ ] Database: managed MySQL or PostgreSQL with automated backups and a tested restore
 - [ ] `php artisan migrate --force` as a controlled deploy step (never `migrate:fresh`)
 - [ ] Never run `DemoDataSeeder` (it refuses in production)
+- [ ] Sign in with Google (optional): in Google Cloud Console create an OAuth client ID of type "Web application", add the site origin (e.g. `https://doonportal.com`) under Authorised JavaScript origins, set `GOOGLE_CLIENT_ID`, then `php artisan optimize`. No client secret is needed.
 - [ ] Queue worker (`php artisan queue:work`) under a supervisor; scheduler cron `* * * * * php artisan schedule:run`
 - [ ] `php artisan config:cache route:cache view:cache` and `npm run build` artefacts deployed
 - [ ] Storage: object storage + CDN for media; `php artisan storage:link` if local disk

@@ -26,6 +26,16 @@ export const MENU = [
         ],
     },
     {
+        id: 'community',
+        label: 'Community',
+        icon: 'users',
+        items: [
+            { to: '/admin/claims', label: 'Ownership claims', permission: PERMISSIONS.claims },
+            { to: '/admin/submissions', label: 'Submissions', permission: PERMISSIONS.submissions },
+            { to: '/admin/reviews', label: 'Reviews', permission: PERMISSIONS.reviews },
+        ],
+    },
+    {
         id: 'events',
         label: 'Events',
         icon: 'calendar',

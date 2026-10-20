@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\PermissionName;
+use App\Http\Controllers\Api\V1\Account;
 use App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\AreaController;
@@ -26,6 +27,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::middleware('throttle:auth')->group(function () {
             Route::post('register', [AuthController::class, 'register'])->name('register');
             Route::post('login', [AuthController::class, 'login'])->name('login');
+            Route::post('google', [AuthController::class, 'google'])->name('google');
             Route::post('forgot-password', [PasswordResetController::class, 'forgot'])->name('forgot-password');
             Route::post('reset-password', [PasswordResetController::class, 'reset'])->name('reset-password');
         });
@@ -41,6 +43,44 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::patch('me', [MeController::class, 'update'])->name('me.update');
         Route::put('me/password', [MeController::class, 'updatePassword'])
             ->middleware('throttle:password')->name('me.password');
+        Route::post('me/google', [MeController::class, 'linkGoogle'])->middleware('throttle:auth')->name('me.google');
+
+        // Saved businesses, places, events and stories.
+        Route::get('me/saved', [Account\SavedController::class, 'index'])->name('me.saved.index');
+        Route::get('me/saved/keys', [Account\SavedController::class, 'keys'])->name('me.saved.keys');
+        Route::put('me/saved/{type}/{id}', [Account\SavedController::class, 'store'])
+            ->where(['type' => '[a-z_]+', 'id' => '[0-9A-Za-z]{26}'])->name('me.saved.store');
+        Route::delete('me/saved/{type}/{id}', [Account\SavedController::class, 'destroy'])
+            ->where(['type' => '[a-z_]+', 'id' => '[0-9A-Za-z]{26}'])->name('me.saved.destroy');
+
+        // The member's reviews.
+        Route::get('me/reviews', [Account\ReviewController::class, 'index'])->name('me.reviews.index');
+        Route::patch('me/reviews/{review:id}', [Account\ReviewController::class, 'update'])->middleware('throttle:community')->name('me.reviews.update');
+        Route::delete('me/reviews/{review:id}', [Account\ReviewController::class, 'destroy'])->name('me.reviews.destroy');
+        Route::get('businesses/{business:slug}/my-review', [Account\ReviewController::class, 'mine'])->name('businesses.my-review');
+        Route::post('businesses/{business:slug}/reviews', [Account\ReviewController::class, 'store'])
+            ->middleware('throttle:community')->name('businesses.reviews.store');
+
+        // Ownership claims and new listings.
+        Route::post('businesses/{business:slug}/claim', [Account\ClaimController::class, 'store'])
+            ->middleware('throttle:community')->name('businesses.claim');
+        Route::get('me/claims', [Account\ClaimController::class, 'index'])->name('me.claims.index');
+        Route::post('me/claims/{claim:id}/cancel', [Account\ClaimController::class, 'cancel'])->name('me.claims.cancel');
+        Route::get('me/submissions', [Account\SubmissionController::class, 'index'])->name('me.submissions.index');
+        Route::post('me/submissions/business', [Account\SubmissionController::class, 'storeBusiness'])
+            ->middleware('throttle:community')->name('me.submissions.business');
+        Route::delete('me/submissions/{submission:id}', [Account\SubmissionController::class, 'destroy'])->name('me.submissions.destroy');
+
+        // Business owner tools (listings the member owns).
+        Route::controller(Account\OwnerBusinessController::class)->prefix('me/businesses')->name('me.businesses.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('{business:id}', 'show')->name('show');
+            Route::post('{business:id}/edits', 'proposeEdit')->middleware('throttle:community')->name('edits');
+            Route::get('{business:id}/stats', 'stats')->name('stats');
+            Route::get('{business:id}/reviews', 'reviews')->name('reviews');
+            Route::put('{business:id}/reviews/{review:id}/reply', 'reply')->name('reviews.reply');
+            Route::delete('{business:id}/reviews/{review:id}/reply', 'reply')->name('reviews.reply.destroy');
+        });
     });
 
     // Public discovery
@@ -142,6 +182,28 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::get('{user:id}', 'show')->name('show');
                 Route::put('{user:id}/roles', 'updateRoles')->name('roles');
+            });
+
+        // Community moderation: ownership claims, submissions, reviews.
+        Route::controller(Admin\ClaimController::class)->prefix('claims')->name('claims.')
+            ->middleware('can:'.PermissionName::ManageClaims->value)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('{claim:id}', 'show')->name('show');
+                Route::post('{claim:id}/approve', 'approve')->name('approve');
+                Route::post('{claim:id}/reject', 'reject')->name('reject');
+            });
+        Route::controller(Admin\SubmissionController::class)->prefix('submissions')->name('submissions.')
+            ->middleware('can:'.PermissionName::ModerateSubmissions->value)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('{submission:id}', 'show')->name('show');
+                Route::post('{submission:id}/approve', 'approve')->name('approve');
+                Route::post('{submission:id}/reject', 'reject')->name('reject');
+            });
+        Route::controller(Admin\ReviewController::class)->prefix('reviews')->name('reviews.')
+            ->middleware('can:'.PermissionName::ModerateReviews->value)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('{review:id}/status', 'status')->name('status');
+                Route::delete('{review:id}/reply', 'removeReply')->name('reply.destroy');
             });
 
         Route::get('audit-logs', [Admin\AuditLogController::class, 'index'])

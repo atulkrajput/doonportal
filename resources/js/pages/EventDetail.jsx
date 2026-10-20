@@ -7,6 +7,7 @@ import { CardGrid, Cover, EventCard } from '../components/Cards';
 import { DemoBadge } from '../components/Badges';
 import { Breadcrumbs, DetailGate, InfoRow } from '../components/Detail';
 import { Icon } from '../components/Icons';
+import { SaveButton } from '../context/SavedContext';
 
 function EventView({ event }) {
     const { data: related } = useApi(`/events/${event.slug}/related`);
@@ -52,6 +53,7 @@ function EventView({ event }) {
                                 <Icon name="route" size={16} /> Directions
                             </a>
                         )}
+                        <SaveButton type="event" id={event.id} />
                     </div>
                 </div>
 

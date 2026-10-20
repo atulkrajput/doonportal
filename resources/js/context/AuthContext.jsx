@@ -24,6 +24,20 @@ export function AuthProvider({ children }) {
         return data.user;
     }, []);
 
+    const loginWithGoogle = useCallback(async (credential) => {
+        const { data } = await api.post('/auth/google', { credential });
+        setToken(data.token);
+        setUser(data.user);
+        return data.user;
+    }, []);
+
+    /** Reload the signed-in user (after profile changes, a new role…). */
+    const refresh = useCallback(async () => {
+        const { data } = await api.get('/auth/me');
+        setUser(data.data);
+        return data.data;
+    }, []);
+
     const register = useCallback(async (details) => {
         const { data } = await api.post('/auth/register', details);
         setToken(data.token);
@@ -40,7 +54,10 @@ export function AuthProvider({ children }) {
         }
     }, []);
 
-    const value = useMemo(() => ({ user, ready, login, register, logout }), [user, ready, login, register, logout]);
+    const value = useMemo(
+        () => ({ user, ready, login, loginWithGoogle, register, logout, refresh, setUser }),
+        [user, ready, login, loginWithGoogle, register, logout, refresh],
+    );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

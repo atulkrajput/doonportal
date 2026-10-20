@@ -78,6 +78,12 @@ class AppServiceProvider extends ServiceProvider
         // Limits guessing of the current password with a stolen token.
         RateLimiter::for('password', fn (Request $request) => Limit::perMinute(5)->by('password:'.($request->user()?->id ?: $request->ip())));
 
+        // Reviews, claims, listing submissions and edits: plenty for real use, too slow for spam.
+        RateLimiter::for('community', fn (Request $request) => [
+            Limit::perMinute(6)->by('community:'.($request->user()?->id ?: $request->ip())),
+            Limit::perDay(40)->by('community-day:'.($request->user()?->id ?: $request->ip())),
+        ]);
+
         RateLimiter::for('analytics', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
     }
 }

@@ -28,7 +28,14 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'phone_country',
         'bio',
+        'address_line1',
+        'address_line2',
+        'city',
+        'state',
+        'postal_code',
+        'country',
         'password',
     ];
 
@@ -38,6 +45,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'google_id',
     ];
 
     /**
@@ -69,6 +77,21 @@ class User extends Authenticatable
     public function submissions(): HasMany
     {
         return $this->hasMany(Submission::class);
+    }
+
+    public function ownedBusinesses(): HasMany
+    {
+        return $this->hasMany(Business::class, 'owner_id');
+    }
+
+    public function businessClaims(): HasMany
+    {
+        return $this->hasMany(BusinessClaim::class);
+    }
+
+    public function hasPassword(): bool
+    {
+        return filled($this->password);
     }
 
     public function assignRole(RoleName ...$roles): static

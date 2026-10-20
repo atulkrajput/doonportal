@@ -9,6 +9,13 @@ class ChangePasswordRequest extends FormRequest
 {
     public function rules(): array
     {
+        // Accounts created with Google have no password yet and set one without it.
+        if (! $this->user()?->hasPassword()) {
+            return [
+                'password' => ['required', 'string', 'confirmed', Password::defaults()],
+            ];
+        }
+
         return [
             // Checked against the sanctum guard's user; a wrong value is a 422 on this field.
             'current_password' => ['required', 'string', 'current_password:sanctum'],

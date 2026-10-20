@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminIndexRequest;
+use App\Services\AuditedWriter;
 use App\Services\AuditLogger;
 use App\Services\Discovery\DiscoveryQuery;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,7 +12,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -50,39 +50,14 @@ abstract class AdminController extends Controller
     }
 
     /**
-     * Fill, save and audit a model in one transaction. Only changed fields are
-     * written to the audit trail; relation syncs report their own before/after.
+     * Fill, save and audit a model in one transaction (see AuditedWriter::save()).
      *
      * @param  array<string, mixed>  $attributes
-     * @param  array<string, callable(Model): array{0: mixed, 1: mixed}>  $relations  name => sync callback returning [before, after]
+     * @param  array<string, callable(Model): array{0: mixed, 1: mixed}>  $relations
      */
     protected function saveAudited(Model $model, array $attributes, array $relations = []): Model
     {
-        $creating = ! $model->exists;
-        $type = $model->getMorphClass();
-
-        return DB::transaction(function () use ($model, $attributes, $relations, $creating, $type) {
-            $model->fill($attributes);
-            $dirty = array_keys($model->getDirty());
-            $old = $creating ? [] : Arr::only($model->getOriginal(), $dirty);
-            $new = collect($dirty)->mapWithKeys(fn (string $key) => [$key => $model->getAttribute($key)])->all();
-
-            $model->save();
-
-            foreach ($relations as $name => $sync) {
-                [$before, $after] = $sync($model);
-                if ($before != $after) {
-                    $old[$name] = $before;
-                    $new[$name] = $after;
-                }
-            }
-
-            if ($creating || $new !== []) {
-                $this->audit->log($type.($creating ? '.created' : '.updated'), $model, $creating ? null : $old, $new);
-            }
-
-            return $model;
-        });
+        return app(AuditedWriter::class)->save($model, $attributes, $relations);
     }
 
     protected function deleteAudited(Model $model): void
@@ -102,39 +77,21 @@ abstract class AdminController extends Controller
     }
 
     /**
-     * Sync a many-to-many relation to the given ids and report [before, after].
-     *
-     * @param  array<int|string, mixed>  $ids  plain ids, or id => pivot attributes
+     * @param  array<int|string, mixed>  $ids
      * @return array{0: list<string>, 1: list<string>}
      */
     protected function syncIds(BelongsToMany $relation, array $ids): array
     {
-        $key = $relation->getRelated()->getQualifiedKeyName();
-        $before = $relation->pluck($key)->sort()->values()->all();
-        $relation->sync($ids);
-        $after = $relation->pluck($key)->sort()->values()->all();
-
-        return [$before, $after];
+        return app(AuditedWriter::class)->syncIds($relation, $ids);
     }
 
     /**
-     * Replace all child rows of a has-many relation and report [before, after].
-     *
      * @param  list<array<string, mixed>>  $rows
-     * @param  list<string>  $fields  fields compared and reported in the audit trail
+     * @param  list<string>  $fields
      * @return array{0: list<array<string, mixed>>, 1: list<array<string, mixed>>}
      */
     protected function replaceChildren(HasMany $relation, array $rows, array $fields): array
     {
-        $snapshot = fn () => $relation->getQuery()->clone()->get()
-            ->map(fn (Model $m) => Arr::only($m->toArray(), $fields))->values()->all();
-
-        $before = $snapshot();
-        $relation->getQuery()->clone()->delete();
-        foreach ($rows as $row) {
-            $relation->create(Arr::only($row, $fields));
-        }
-
-        return [$before, $snapshot()];
+        return app(AuditedWriter::class)->replaceChildren($relation, $rows, $fields);
     }
 }

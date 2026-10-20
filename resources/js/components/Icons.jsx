@@ -62,9 +62,9 @@ const paths = {
     external: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6',
 };
 
-export function Icon({ name, className = '', size = 20, label }) {
+export function Icon({ name, className = '', size = 20, label, filled = false }) {
     return (
-        <svg {...base} width={size} height={size} className={className} aria-hidden={label ? undefined : true} role={label ? 'img' : undefined} aria-label={label}>
+        <svg {...base} fill={filled ? 'currentColor' : 'none'} width={size} height={size} className={className} aria-hidden={label ? undefined : true} role={label ? 'img' : undefined} aria-label={label}>
             <path d={paths[name]} />
         </svg>
     );

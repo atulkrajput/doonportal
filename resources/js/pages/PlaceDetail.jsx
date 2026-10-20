@@ -7,6 +7,7 @@ import { CardGrid, Cover, PlaceCard } from '../components/Cards';
 import { DemoBadge, Rating } from '../components/Badges';
 import { Breadcrumbs, DetailGate, InfoRow, Provenance } from '../components/Detail';
 import { Icon } from '../components/Icons';
+import { SaveButton } from '../context/SavedContext';
 
 function entryText(entry) {
     if (entry.is_free) {
@@ -54,10 +55,11 @@ function PlaceView({ place }) {
                             </Link>
                         )}
                     </div>
-                    <div className="mt-5">
+                    <div className="mt-5 flex flex-wrap gap-2">
                         <a href={directionsHref(place.location, place.name)} target="_blank" rel="noopener noreferrer" className="btn-primary" onClick={() => track('directions_clicked', { type: 'place', id: place.id })}>
                             <Icon name="route" size={16} /> Directions
                         </a>
+                        <SaveButton type="place" id={place.id} />
                     </div>
                 </div>
 

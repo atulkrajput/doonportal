@@ -45,6 +45,8 @@ class SpaController extends Controller
             'verification' => array_intersect_key($tracking, array_flip(['google_site_verification', 'bing_site_verification'])),
             'siteConfig' => [
                 'site_name' => $settings->get('seo')['site_name'],
+                // Public OAuth client ID for the "Sign in with Google" button; empty hides it.
+                'google_client_id' => config('services.google.client_id') ?: null,
                 'social' => array_filter($settings->get('social')),
                 'footer_pages' => Page::query()->public()->where('show_in_footer', true)
                     ->orderBy('sort_order')->orderBy('title')->get(['slug', 'title'])

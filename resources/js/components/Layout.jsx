@@ -21,7 +21,7 @@ const MOBILE_NAV = [
     { to: '/places', label: 'Explore', icon: 'compass' },
     { to: '/search', label: 'Search', icon: 'search' },
     { to: '/events', label: 'Events', icon: 'calendar' },
-    { to: '/saved', label: 'Saved', icon: 'heart' },
+    { to: '/account/saved', label: 'Saved', icon: 'heart' },
 ];
 
 function Header() {
@@ -62,9 +62,18 @@ function Header() {
                     <Link to="/business-portal" className="btn-primary hidden whitespace-nowrap md:inline-flex">
                         <Icon name="store" size={16} /> Business
                     </Link>
-                    <Link to={user ? '/saved' : '/login'} className="hidden rounded-full p-2 text-stone-700 hover:text-navy-700 sm:block" aria-label={user ? 'My DoonPortal' : 'Sign in'}>
-                        <Icon name="user" />
-                    </Link>
+                    {user ? (
+                        <Link to="/account" className="hidden items-center gap-2 rounded-full py-1 pl-1 pr-3 text-sm font-semibold text-stone-700 hover:bg-navy-50 hover:text-navy-700 sm:inline-flex" aria-label="My DoonPortal">
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-navy-700 text-xs font-bold text-white" aria-hidden="true">
+                                {user.name?.trim()?.[0]?.toUpperCase()}
+                            </span>
+                            <span className="hidden max-w-[8rem] truncate lg:inline">{user.name?.split(' ')[0]}</span>
+                        </Link>
+                    ) : (
+                        <Link to="/login" className="hidden rounded-full px-3 py-1.5 text-sm font-semibold text-stone-700 hover:bg-navy-50 hover:text-navy-700 sm:inline-flex">
+                            Sign in
+                        </Link>
+                    )}
                     <button type="button" className="rounded-full p-2 xl:hidden" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="mobile-menu" aria-label="Menu">
                         <Icon name={open ? 'close' : 'menu'} />
                     </button>
@@ -73,7 +82,7 @@ function Header() {
             {open && (
                 <nav id="mobile-menu" className="border-t border-stone-200 bg-cream xl:hidden" aria-label="Mobile">
                     <div className="container-page grid grid-cols-2 gap-1 py-3">
-                        {[...NAV, { to: '/areas', label: 'Areas' }, { to: '/collections', label: 'Best of Doon' }, { to: '/business-portal', label: 'List your business' }, { to: user ? '/saved' : '/login', label: user ? 'My DoonPortal' : 'Sign in' }, ...(isStaff(user) ? [{ to: '/admin', label: 'Admin' }] : [])].map((item) => (
+                        {[...NAV, { to: '/areas', label: 'Areas' }, { to: '/collections', label: 'Best of Doon' }, { to: '/business-portal', label: 'List your business' }, { to: user ? '/account' : '/login', label: user ? 'My DoonPortal' : 'Sign in' }, ...(isStaff(user) ? [{ to: '/admin', label: 'Admin' }] : [])].map((item) => (
                             <NavLink key={item.to + item.label} to={item.to} className={linkClass}>
                                 {item.label}
                             </NavLink>
@@ -112,7 +121,7 @@ function Footer() {
     const columns = [
         ['Discover', [['/places', 'Things to do'], ['/businesses/food-drink', 'Eat'], ['/businesses/shopping', 'Shop'], ['/services', 'Services'], ['/events', 'Events']]],
         ['Doon', [['/areas', 'Areas'], ['/stories', 'Stories'], ['/collections', 'Best of Doon'], ['/explore', 'All categories']]],
-        ['For business', [['/business-portal', 'List your business'], ['/business-portal', 'Claim a listing']]],
+        ['For business', [['/business-portal', 'DoonPortal for business'], ['/account/businesses/new', 'List your business'], ['/businesses', 'Claim a listing']]],
         ['About', (siteConfig().footer_pages || []).map((p) => [p.path, p.title])],
     ];
     return (

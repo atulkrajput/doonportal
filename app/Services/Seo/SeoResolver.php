@@ -85,6 +85,9 @@ class SeoResolver
         if ($path === '/admin' || str_starts_with($path, '/admin/')) {
             return $this->page('Admin', $this->seo['default_description'], $path, robots: 'noindex,nofollow');
         }
+        if ($path === '/account' || str_starts_with($path, '/account/')) {
+            return $this->page('My DoonPortal', $this->seo['default_description'], $path, robots: 'noindex,nofollow');
+        }
         if (isset(self::PRIVATE_PAGES[$path])) {
             return $this->page(self::PRIVATE_PAGES[$path], $this->seo['default_description'], $path, robots: 'noindex,follow');
         }

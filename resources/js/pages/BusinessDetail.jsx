@@ -1,13 +1,16 @@
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 import { useApi } from '../hooks/useApi';
+import { useAuth } from '../context/AuthContext';
+import { SaveButton } from '../context/SavedContext';
 import { track } from '../lib/analytics';
 import { DAYS, directionsHref, formatDate, formatPaise, priceRange, telHref, whatsappHref } from '../lib/format';
 import { BusinessCard, CardGrid, Cover } from '../components/Cards';
 import { DemoBadge, OpenBadge, Rating, VerifiedBadge } from '../components/Badges';
 import { Breadcrumbs, DetailGate, InfoRow, Provenance } from '../components/Detail';
 import { Icon } from '../components/Icons';
-import { EmptyState } from '../components/States';
+import { BusinessReviews } from '../components/Reviews';
+import ClaimListing from '../components/ClaimListing';
 
 function Actions({ business }) {
     const { contact } = business;
@@ -33,6 +36,7 @@ function Actions({ business }) {
                     <Icon name={a.icon} size={16} /> {a.label}
                 </a>
             ))}
+            <SaveButton type="business" id={business.id} />
         </div>
     );
 }
@@ -66,35 +70,10 @@ function Hours({ hours, openNow }) {
     );
 }
 
-function Reviews({ slug }) {
-    const { data, loading } = useApi(`/businesses/${slug}/reviews`, { per_page: 5 });
-    if (loading) {
-        return null;
-    }
-    if (!data?.data?.length) {
-        return <EmptyState title="No reviews yet">Reviews open to signed-in members soon.</EmptyState>;
-    }
-    return (
-        <ul className="space-y-4">
-            {data.data.map((r) => (
-                <li key={r.id} className="rounded-2xl border border-stone-200 bg-white p-4">
-                    <div className="flex items-center justify-between">
-                        <p className="font-semibold">{r.author?.name ?? 'Member'}</p>
-                        <span className="text-sm text-accent-500" aria-label={`${r.rating} out of 5`}>
-                            {'★'.repeat(r.rating)}
-                            <span className="text-stone-300">{'★'.repeat(5 - r.rating)}</span>
-                        </span>
-                    </div>
-                    {r.title && <p className="mt-1 font-medium">{r.title}</p>}
-                    {r.body && <p className="mt-1 text-sm text-stone-700">{r.body}</p>}
-                    <p className="mt-2 text-xs text-stone-500">{formatDate(r.created_at)}</p>
-                </li>
-            ))}
-        </ul>
-    );
-}
-
 function BusinessView({ business }) {
+    const { user } = useAuth();
+    const { data: owned } = useApi(user?.is_business_owner ? '/me/businesses' : null);
+    const isOwner = Boolean(owned?.data?.some((b) => b.id === business.id));
     const { data: services } = useApi(`/businesses/${business.slug}/services`);
     const { data: offers } = useApi(`/businesses/${business.slug}/offers`);
     const { data: related } = useApi(`/businesses/${business.slug}/related`);
@@ -190,10 +169,17 @@ function BusinessView({ business }) {
                                 </ul>
                             </section>
                         )}
-                        <section>
-                            <h2 className="font-display text-xl font-bold">Reviews</h2>
+                        <section id="reviews">
+                            <div className="flex flex-wrap items-baseline justify-between gap-2">
+                                <h2 className="font-display text-xl font-bold">Reviews</h2>
+                                {business.rating?.count > 0 && (
+                                    <p className="text-sm text-stone-600">
+                                        <span className="font-semibold text-ink">{business.rating.average}</span> out of 5 · {business.rating.count} review{business.rating.count > 1 ? 's' : ''}
+                                    </p>
+                                )}
+                            </div>
                             <div className="mt-3">
-                                <Reviews slug={business.slug} />
+                                <BusinessReviews business={business} isOwner={isOwner} />
                             </div>
                         </section>
                     </div>
@@ -234,15 +220,8 @@ function BusinessView({ business }) {
                             </div>
                         </div>
                         <div className="rounded-2xl border border-stone-200 bg-white p-5 text-sm">
-                            {!business.is_claimed && (
-                                <p>
-                                    Own this business?{' '}
-                                    <Link to="/business-portal" className="font-semibold text-navy-700 underline">
-                                        Claim this listing
-                                    </Link>
-                                </p>
-                            )}
-                            <p className="mt-2 flex items-center gap-1 text-stone-600">
+                            <ClaimListing business={business} isOwner={isOwner} />
+                            <p className="mt-4 flex items-center gap-1 border-t border-stone-100 pt-4 text-stone-600">
                                 <Icon name="flag" size={16} /> Spotted something wrong? Corrections open soon.
                             </p>
                             <Provenance provenance={business.provenance} />
