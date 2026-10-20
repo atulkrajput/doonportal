@@ -73,7 +73,7 @@ function Person({ user }) {
     }
     return (
         <span>
-            <Link to={`/admin/users/${user.id}`} className="font-semibold text-navy-700 hover:underline">
+            <Link to={`/admin/members/${user.id}`} className="font-semibold text-navy-700 hover:underline">
                 {user.name}
             </Link>{' '}
             <span className="text-stone-600">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Admin;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -9,9 +10,9 @@ use Illuminate\Support\Facades\Gate;
 abstract class Controller
 {
     /**
-     * The token-authenticated user on public routes that do not require auth.
+     * The token-authenticated member or staff account on public routes that do not require auth.
      */
-    protected function viewer(): ?User
+    protected function viewer(): User|Admin|null
     {
         return auth('sanctum')->user();
     }

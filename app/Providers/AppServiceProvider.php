@@ -7,6 +7,7 @@ use App\AI\Providers\FakeProvider;
 use App\AI\Providers\GroqProvider;
 use App\Enums\EntityType;
 use App\Enums\PermissionName;
+use App\Models\Admin;
 use App\Models\User;
 use App\Services\Search\DatabaseSearchService;
 use App\Services\Search\SearchService;
@@ -46,16 +47,17 @@ class AppServiceProvider extends ServiceProvider
         // Controlled polymorphic types: anything outside this map is rejected.
         Relation::enforceMorphMap(EntityType::morphMap());
 
-        Gate::before(fn (User $user) => $user->isSuperAdmin() ? true : null);
+        // Permissions belong to staff accounts only; members never pass a staff gate.
+        Gate::before(fn (User|Admin $user) => $user instanceof Admin && $user->isSuperAdmin() ? true : null);
 
         foreach (PermissionName::cases() as $permission) {
-            Gate::define($permission->value, fn (User $user) => $user->hasPermission($permission));
+            Gate::define($permission->value, fn (User|Admin $user) => $user instanceof Admin && $user->hasPermission($permission));
         }
 
-        // Staff area: any user holding at least one permission.
-        Gate::define('admin.access', fn (User $user) => $user->permissionNames() !== []);
+        // Staff area: any active staff account holding at least one permission.
+        Gate::define('admin.access', fn (User|Admin $user) => $user instanceof Admin && $user->permissionNames() !== []);
 
-        Gate::define('media.upload', fn (User $user) => collect(PermissionName::contentManagement())
+        Gate::define('media.upload', fn (User|Admin $user) => $user instanceof Admin && collect(PermissionName::contentManagement())
             ->contains(fn (PermissionName $p) => $user->hasPermission($p)));
 
         ResetPassword::createUrlUsing(fn (User $user, string $token) => url('/reset-password').'?'.http_build_query([
@@ -69,6 +71,11 @@ class AppServiceProvider extends ServiceProvider
     private function configureRateLimiting(): void
     {
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip()));
+
+        RateLimiter::for('staff-auth', fn (Request $request) => [
+            Limit::perMinute(5)->by('staff-ip:'.$request->ip()),
+            Limit::perMinute(5)->by('staff-email:'.strtolower((string) $request->input('email'))),
+        ]);
 
         RateLimiter::for('auth', fn (Request $request) => [
             Limit::perMinute(10)->by('ip:'.$request->ip()),

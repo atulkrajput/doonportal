@@ -6,6 +6,7 @@ use App\Enums\BusinessStatus;
 use App\Enums\EventStatus;
 use App\Enums\PublicationStatus;
 use App\Exceptions\InvalidStatusTransition;
+use App\Models\Admin;
 use App\Models\Business;
 use App\Models\Collection;
 use App\Models\Event;
@@ -27,7 +28,7 @@ class StatusTransitionService
 
     public function __construct(private readonly AuditLogger $audit) {}
 
-    public function transitionBusiness(Business $business, BusinessStatus $to, ?User $actor = null, ?string $note = null): Business
+    public function transitionBusiness(Business $business, BusinessStatus $to, User|Admin|null $actor = null, ?string $note = null): Business
     {
         $from = $business->status;
 
@@ -58,7 +59,7 @@ class StatusTransitionService
         });
     }
 
-    public function transitionEvent(Event $event, EventStatus $to, ?User $actor = null, ?string $note = null): Event
+    public function transitionEvent(Event $event, EventStatus $to, User|Admin|null $actor = null, ?string $note = null): Event
     {
         $from = $event->status;
 
@@ -98,7 +99,7 @@ class StatusTransitionService
      * Move an event to new dates. Once an event has been announced (published or
      * cancelled), its first announced start is kept in original_starts_at.
      */
-    public function rescheduleEvent(Event $event, CarbonInterface $startsAt, ?CarbonInterface $endsAt, ?User $actor = null, ?string $reason = null): Event
+    public function rescheduleEvent(Event $event, CarbonInterface $startsAt, ?CarbonInterface $endsAt, User|Admin|null $actor = null, ?string $reason = null): Event
     {
         $old = ['starts_at' => $event->starts_at, 'ends_at' => $event->ends_at, 'original_starts_at' => $event->original_starts_at];
         $announced = in_array($event->status->value, EventStatus::publicValues(), true);
@@ -141,7 +142,7 @@ class StatusTransitionService
     /**
      * Editorial workflow for places, stories, collections and site pages.
      */
-    public function transitionPublication(Place|Story|Collection|Page $model, PublicationStatus $to, ?User $actor = null, ?string $note = null): Place|Story|Collection|Page
+    public function transitionPublication(Place|Story|Collection|Page $model, PublicationStatus $to, User|Admin|null $actor = null, ?string $note = null): Place|Story|Collection|Page
     {
         $from = $model->status;
         $type = $model->getMorphClass();

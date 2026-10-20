@@ -64,7 +64,7 @@ class Collection extends Model
 
     public function curator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'curator_id');
+        return $this->belongsTo(Admin::class, 'curator_id');
     }
 
     public function cover(): BelongsTo

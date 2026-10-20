@@ -5,6 +5,7 @@ namespace App\Services\Community;
 use App\Enums\BusinessStatus;
 use App\Enums\ClaimStatus;
 use App\Enums\RoleName;
+use App\Models\Admin;
 use App\Models\Business;
 use App\Models\BusinessClaim;
 use App\Models\User;
@@ -61,7 +62,7 @@ class ClaimService
         });
     }
 
-    public function approve(BusinessClaim $claim, User $reviewer, ?string $notes = null): BusinessClaim
+    public function approve(BusinessClaim $claim, Admin $reviewer, ?string $notes = null): BusinessClaim
     {
         $this->assertPending($claim);
 
@@ -92,7 +93,7 @@ class ClaimService
         });
     }
 
-    public function reject(BusinessClaim $claim, User $reviewer, string $notes): BusinessClaim
+    public function reject(BusinessClaim $claim, Admin $reviewer, string $notes): BusinessClaim
     {
         $this->assertPending($claim);
 
@@ -106,7 +107,7 @@ class ClaimService
         return DB::transaction(fn () => $this->close($claim, ClaimStatus::Cancelled, $user, null));
     }
 
-    private function close(BusinessClaim $claim, ClaimStatus $status, User $actor, ?string $notes): BusinessClaim
+    private function close(BusinessClaim $claim, ClaimStatus $status, User|Admin $actor, ?string $notes): BusinessClaim
     {
         $claim->forceFill([
             'status' => $status,

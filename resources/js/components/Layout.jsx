@@ -5,7 +5,6 @@ import { Icon } from './Icons';
 import { Logo } from './Brand';
 import { SOCIAL_PROFILES, siteConfig } from '../lib/site';
 import { openCookieSettings } from '../lib/consent';
-import { isStaff } from '../admin/lib';
 
 const NAV = [
     { to: '/places', label: 'Explore' },
@@ -54,11 +53,6 @@ function Header() {
                     <button type="button" onClick={() => navigate('/search')} className="btn-secondary hidden whitespace-nowrap sm:inline-flex">
                         <Icon name="search" size={16} /> Search Doon
                     </button>
-                    {isStaff(user) && (
-                        <Link to="/admin" className="hidden rounded-full px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50 sm:inline-flex">
-                            Admin
-                        </Link>
-                    )}
                     <Link to="/business-portal" className="btn-primary hidden whitespace-nowrap md:inline-flex">
                         <Icon name="store" size={16} /> Business
                     </Link>
@@ -82,7 +76,7 @@ function Header() {
             {open && (
                 <nav id="mobile-menu" className="border-t border-stone-200 bg-cream xl:hidden" aria-label="Mobile">
                     <div className="container-page grid grid-cols-2 gap-1 py-3">
-                        {[...NAV, { to: '/areas', label: 'Areas' }, { to: '/collections', label: 'Best of Doon' }, { to: '/business-portal', label: 'List your business' }, { to: user ? '/account' : '/login', label: user ? 'My DoonPortal' : 'Sign in' }, ...(isStaff(user) ? [{ to: '/admin', label: 'Admin' }] : [])].map((item) => (
+                        {[...NAV, { to: '/areas', label: 'Areas' }, { to: '/collections', label: 'Best of Doon' }, { to: '/business-portal', label: 'List your business' }, { to: user ? '/account' : '/login', label: user ? 'My DoonPortal' : 'Sign in' }].map((item) => (
                             <NavLink key={item.to + item.label} to={item.to} className={linkClass}>
                                 {item.label}
                             </NavLink>

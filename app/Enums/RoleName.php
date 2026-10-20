@@ -12,6 +12,29 @@ enum RoleName: string
     case Contributor = 'CONTRIBUTOR';
     case User = 'USER';
 
+    /**
+     * Roles held by DoonPortal staff accounts (admins table). The rest are member roles.
+     *
+     * @return list<self>
+     */
+    public static function staff(): array
+    {
+        return [self::SuperAdmin, self::Admin, self::Editor, self::Moderator];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function staffValues(): array
+    {
+        return array_map(fn (self $r) => $r->value, self::staff());
+    }
+
+    public function isStaff(): bool
+    {
+        return in_array($this, self::staff(), true);
+    }
+
     public function label(): string
     {
         return ucwords(strtolower(str_replace('_', ' ', $this->value)));

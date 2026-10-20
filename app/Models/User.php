@@ -2,8 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\PermissionName;
-use App\Enums\RoleName;
+use App\Models\Concerns\HasRoles;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,10 +13,14 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * A member account (residents, visitors, business owners). Staff accounts are
+ * App\Models\Admin; member roles carry no admin permissions.
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasUlids, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, HasRoles, HasUlids, Notifiable, SoftDeletes;
 
     /**
      * Roles are never mass assignable; use assignRole().
@@ -92,45 +95,5 @@ class User extends Authenticatable
     public function hasPassword(): bool
     {
         return filled($this->password);
-    }
-
-    public function assignRole(RoleName ...$roles): static
-    {
-        $ids = Role::whereIn('name', array_map(fn (RoleName $r) => $r->value, $roles))->pluck('id');
-        $this->roles()->syncWithoutDetaching(
-            $ids->mapWithKeys(fn ($id) => [$id => ['created_at' => now()]])->all()
-        );
-        $this->unsetRelation('roles');
-
-        return $this;
-    }
-
-    public function hasRole(RoleName ...$roles): bool
-    {
-        $names = array_map(fn (RoleName $r) => $r->value, $roles);
-
-        return $this->roles->contains(fn (Role $role) => in_array($role->name, $names, true));
-    }
-
-    public function isSuperAdmin(): bool
-    {
-        return $this->hasRole(RoleName::SuperAdmin);
-    }
-
-    public function hasPermission(PermissionName|string $permission): bool
-    {
-        $name = $permission instanceof PermissionName ? $permission->value : $permission;
-
-        return in_array($name, $this->permissionNames(), true);
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function permissionNames(): array
-    {
-        $this->loadMissing('roles.permissions');
-
-        return $this->roles->flatMap->permissions->pluck('name')->unique()->values()->all();
     }
 }

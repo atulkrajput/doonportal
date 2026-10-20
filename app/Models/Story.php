@@ -67,7 +67,7 @@ class Story extends Model
 
     public function author(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'author_id');
+        return $this->belongsTo(Admin::class, 'author_id');
     }
 
     public function cover(): BelongsTo

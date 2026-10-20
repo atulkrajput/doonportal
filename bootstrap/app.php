@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureMember;
+use App\Http\Middleware\EnsureStaff;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->throttleApi('api');
+        $middleware->alias([
+            'staff' => EnsureStaff::class,
+            'member' => EnsureMember::class,
+        ]);
         // Prepended so the headers also wrap responses from priority-sorted middleware (e.g. auth 401s).
         $middleware->web(prepend: SecurityHeaders::class);
         $middleware->api(prepend: SecurityHeaders::class);

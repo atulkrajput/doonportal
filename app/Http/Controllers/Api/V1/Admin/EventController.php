@@ -39,9 +39,8 @@ class EventController extends AdminController
 
     public function store(EventRequest $request): JsonResponse
     {
-        $event = new Event;
-        $event->submitted_by = $request->user()->id;
-        $event = $this->saveAudited($event, $request->modelAttributes(), $this->relationSyncs($request));
+        // submitted_by is for member submissions; staff-created events are audited instead.
+        $event = $this->saveAudited(new Event, $request->modelAttributes(), $this->relationSyncs($request));
 
         return (new AdminRecordResource($this->loadDetail($event)))->response()->setStatusCode(201);
     }

@@ -91,7 +91,8 @@ export const MENU = [
         label: 'Administration',
         icon: 'shield',
         items: [
-            { to: '/admin/users', label: 'Users & roles', permission: PERMISSIONS.users },
+            { to: '/admin/staff', label: 'Staff', permission: PERMISSIONS.users },
+            { to: '/admin/members', label: 'Members', permission: PERMISSIONS.users },
             { to: '/admin/audit-logs', label: 'Audit log', permission: PERMISSIONS.audit },
             { to: '/admin/account', label: 'My account', permission: null },
         ],

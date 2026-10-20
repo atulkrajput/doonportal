@@ -32,13 +32,14 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('reset-password', [PasswordResetController::class, 'reset'])->name('reset-password');
         });
 
-        Route::middleware('auth:sanctum')->group(function () {
+        Route::middleware(['auth:sanctum', 'member'])->group(function () {
             Route::post('logout', [AuthController::class, 'logout'])->name('logout');
             Route::get('me', [AuthController::class, 'me'])->name('me');
         });
     });
 
-    Route::middleware('auth:sanctum')->group(function () {
+    // Member account routes. Staff accounts use /admin and are refused here.
+    Route::middleware(['auth:sanctum', 'member'])->group(function () {
         Route::get('me', [MeController::class, 'show'])->name('me.show');
         Route::patch('me', [MeController::class, 'update'])->name('me.update');
         Route::put('me/password', [MeController::class, 'updatePassword'])
@@ -134,7 +135,17 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     // Admin & CMS. Records are addressed by id (ULID), not slug. Every group is
     // gated by a permission; SUPER_ADMIN passes all gates via Gate::before.
-    Route::prefix('admin')->name('admin.')->middleware(['auth:sanctum', 'can:admin.access'])->group(function () {
+    // Staff sign-in, separate from members.
+    Route::prefix('admin/auth')->name('admin.auth.')->group(function () {
+        Route::post('login', [Admin\AuthController::class, 'login'])->middleware('throttle:staff-auth')->name('login');
+        Route::middleware(['auth:sanctum', 'staff'])->group(function () {
+            Route::get('me', [Admin\AuthController::class, 'me'])->name('me');
+            Route::post('logout', [Admin\AuthController::class, 'logout'])->name('logout');
+            Route::put('password', [Admin\AuthController::class, 'password'])->middleware('throttle:password')->name('password');
+        });
+    });
+
+    Route::prefix('admin')->name('admin.')->middleware(['auth:sanctum', 'staff', 'can:admin.access'])->group(function () {
         Route::get('dashboard', Admin\DashboardController::class)->name('dashboard');
 
         $content = [
@@ -177,12 +188,20 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 Route::patch('{media:id}', 'update')->name('update');
             });
 
-        Route::controller(Admin\UserController::class)->prefix('users')->name('users.')
-            ->middleware('can:'.PermissionName::ManageUsers->value)->group(function () {
+        // DoonPortal team accounts and (read-only) member accounts.
+        Route::middleware('can:'.PermissionName::ManageUsers->value)->group(function () {
+            Route::controller(Admin\StaffController::class)->prefix('staff')->name('staff.')->group(function () {
                 Route::get('/', 'index')->name('index');
-                Route::get('{user:id}', 'show')->name('show');
-                Route::put('{user:id}/roles', 'updateRoles')->name('roles');
+                Route::post('/', 'store')->name('store');
+                Route::get('{admin:id}', 'show')->name('show');
+                Route::patch('{admin:id}', 'update')->name('update');
+                Route::put('{admin:id}/roles', 'updateRoles')->name('roles');
+                Route::put('{admin:id}/password', 'resetPassword')->name('password');
+                Route::put('{admin:id}/active', 'setActive')->name('active');
             });
+            Route::get('members', [Admin\MemberController::class, 'index'])->name('members.index');
+            Route::get('members/{user:id}', [Admin\MemberController::class, 'show'])->name('members.show');
+        });
 
         // Community moderation: ownership claims, submissions, reviews.
         Route::controller(Admin\ClaimController::class)->prefix('claims')->name('claims.')

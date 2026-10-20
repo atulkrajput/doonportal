@@ -55,6 +55,7 @@ Phases 0–3 are **VERIFIED**: 123 PHPUnit tests (1093 assertions) pass on SQLit
 | P4-6 | Owner stats (views, calls, WhatsApp, directions, website, saves, offers; daily views) and public replies to reviews | P4-3 | VERIFIED | `OwnerBusinessController::stats/reply` | OwnerToolsTest, ReviewsAndSavedTest |
 | P4-7 | Reviews: members write/edit/delete, moderation queue (publish/reject/hide, not own), rating aggregates from published reviews only | P1 | VERIFIED | `ReviewService`, `Account/ReviewController`, `Admin/ReviewController`, `components/Reviews.jsx` | ReviewsAndSavedTest |
 | P4-8 | Saved businesses, places, events and stories (heart buttons, saved list) | P1 | VERIFIED | `Account/SavedController`, `context/SavedContext.jsx` | ReviewsAndSavedTest |
+| P4-9 | Staff accounts separate from members: `admins` table + `admin_role`, own sign-in (`/admin/login`, `/api/v1/admin/auth/*`, 12-hour tokens), staff-only and member-only route guards, staff management (create, roles, password reset, deactivate) and read-only member list; staff-action columns and the audit actor point at staff; `php artisan staff:create`; migration moves existing staff users (same ids) | P0-4 | VERIFIED | `Admin`, `Concerns/HasRoles`, `Admin/AuthController`, `Admin/StaffController`, `Admin/MemberController`, `EnsureStaff`, `EnsureMember`, `CreateStaff`, `admin/StaffContext.jsx`, `admin/pages/StaffLogin.jsx`, `admin/pages/Users.jsx` | StaffManagementTest, StaffMigrationTest, AdminAuthorizationTest, browser check |
 
 ## Known issues / limitations
 
@@ -67,6 +68,7 @@ Phases 0–3 are **VERIFIED**: 123 PHPUnit tests (1093 assertions) pass on SQLit
 | Low | Corrections from members and reports are still placeholders; owners cannot upload photos, logo or cover yet (staff can). |
 | Low | Phone numbers are checked against a bundled country list (dial codes, mobile patterns for common countries), not libphonenumber; numbers are not verified by SMS. |
 | Low | No emails are sent when a claim, listing or edit is approved or rejected; members see the outcome and any note in their account. |
+| Low | Staff have no self-service password reset or two-factor sign-in yet; a super admin sets a new password (Admin > Staff). |
 | Low | Admin relation selects (areas, categories, venues, organizers, linked business/place) load the first 100 options; a searchable picker is needed once any list grows past that (the UI says when it is truncated). |
 | Low | Uploaded images are stored as-is (no resizing, re-encoding or EXIF stripping — GD/Imagick not available locally). |
 | Low | Business sub-records (hours, services, social links, facilities, story links) are replaced wholesale on save; fine for admin editing, revisit if owners edit concurrently (Phase 4). |

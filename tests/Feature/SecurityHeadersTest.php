@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\RoleName;
-use App\Models\User;
+use App\Models\Admin;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Vite;
@@ -97,7 +97,7 @@ class SecurityHeadersTest extends TestCase
     public function test_admin_pages_still_render_with_the_headers(): void
     {
         $this->seed(RolePermissionSeeder::class);
-        Sanctum::actingAs(User::factory()->create()->assignRole(RoleName::User, RoleName::Admin));
+        Sanctum::actingAs(Admin::factory()->create()->assignRole(RoleName::Admin));
 
         foreach (['/admin', '/admin/settings'] as $path) {
             $this->get($path)->assertOk()

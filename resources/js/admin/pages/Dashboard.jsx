@@ -108,7 +108,7 @@ export default function Dashboard() {
                         </p>
                     </Card>
                 )}
-                {d.users && <Card title="Users" to="/admin/users" total={d.users.total} />}
+                {d.users && <Card title="Members" to="/admin/members" total={d.users.total} />}
                 {d.monetization && (
                     <Card title="Revenue this month" to="/admin/revenue" total={formatMoney(d.monetization.revenue_this_month_paise)}>
                         <p className="text-sm text-stone-600">{d.monetization.active_subscriptions} active subscriptions · recorded payments</p>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api, errorMessage, fieldErrors } from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
+import { useStaff } from '../StaffContext';
 import { humanize } from '../lib';
 
 const EMPTY = { current_password: '', password: '', password_confirmation: '' };
@@ -37,7 +37,7 @@ function ChangePasswordForm() {
         }
         setState({ busy: true, message: null, tone: 'ok' });
         try {
-            const { data } = await api.put('/me/password', values);
+            const { data } = await api.put('/admin/auth/password', values);
             setValues(EMPTY);
             setState({ busy: false, message: data.message, tone: 'ok' });
         } catch (err) {
@@ -85,7 +85,7 @@ function ChangePasswordForm() {
 }
 
 export default function Account() {
-    const { user } = useAuth();
+    const { user } = useStaff();
 
     return (
         <div className="max-w-2xl">

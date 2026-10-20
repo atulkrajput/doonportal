@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Admin;
 use App\Models\Media;
-use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -35,7 +35,7 @@ class MediaService
     /**
      * @param  array{alt_text?: ?string, credit?: ?string, source_url?: ?string}  $details
      */
-    public function store(UploadedFile $file, User $uploader, array $details = []): Media
+    public function store(UploadedFile $file, Admin $uploader, array $details = []): Media
     {
         $mime = (string) $file->getMimeType();
         $extension = self::MIME_EXTENSIONS[$mime] ?? throw new \InvalidArgumentException("Unsupported media type [{$mime}].");

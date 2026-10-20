@@ -4,7 +4,7 @@ import { useApi } from '../../hooks/useApi';
 import { ErrorState, PageLoading } from '../../components/States';
 import { Bars, RangePicker, RankList, StatCard, daysAgo } from '../components/Charts';
 import { formatNumber, humanize, PERMISSIONS, can } from '../lib';
-import { useAuth } from '../../context/AuthContext';
+import { useStaff } from '../StaffContext';
 import { PageIntro } from './Settings';
 
 const RANGES = [
@@ -16,7 +16,7 @@ const RANGES = [
 const ENTITY_ADMIN = { business: 'businesses', place: 'places', event: 'events', story: 'stories', collection: 'collections' };
 
 export default function Analytics() {
-    const { user } = useAuth();
+    const { user } = useStaff();
     const [range, setRange] = useState('30');
     const { data, error, loading } = useApi('/admin/analytics', { from: daysAgo(Number(range) - 1), to: daysAgo(0) });
 

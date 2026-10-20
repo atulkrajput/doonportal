@@ -19,7 +19,7 @@ class Media extends Model
 
     public function uploader(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'uploaded_by');
+        return $this->belongsTo(Admin::class, 'uploaded_by');
     }
 
     public function url(): ?string

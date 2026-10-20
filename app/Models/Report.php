@@ -35,7 +35,7 @@ class Report extends Model
 
     public function resolver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'resolver_id');
+        return $this->belongsTo(Admin::class, 'resolver_id');
     }
 
     public function reportable(): MorphTo

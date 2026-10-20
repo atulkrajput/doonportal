@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+use App\Models\Admin;
 use App\Models\Area;
 use App\Models\Business;
 use App\Models\BusinessClaim;
@@ -40,6 +41,7 @@ enum EntityType: string
     case Organizer = 'organizer';
     case Review = 'review';
     case User = 'user';
+    case Admin = 'admin';
     case Media = 'media';
     case Plan = 'plan';
     case Subscription = 'subscription';
@@ -66,6 +68,7 @@ enum EntityType: string
             self::Organizer => Organizer::class,
             self::Review => Review::class,
             self::User => User::class,
+            self::Admin => Admin::class,
             self::Media => Media::class,
             self::Plan => Plan::class,
             self::Subscription => Subscription::class,

@@ -29,8 +29,9 @@ class EventAdminTest extends AdminTestCase
 
         $event = Event::findOrFail($id);
         $this->assertSame("{$date} 12:30:00", $event->starts_at->utc()->format('Y-m-d H:i:s'));
-        $this->assertSame($editor->id, $event->submitted_by);
-        $this->assertNotNull($this->lastAudit('event.created'));
+        $this->assertNull($event->submitted_by, 'submitted_by is for member submissions');
+        $audit = $this->lastAudit('event.created');
+        $this->assertSame([$editor->getMorphClass(), $editor->id], [$audit->actor_type, $audit->actor_id], 'staff creation is recorded in the audit trail');
     }
 
     public function test_publish_cancel_with_reason_and_archive(): void

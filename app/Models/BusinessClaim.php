@@ -40,6 +40,6 @@ class BusinessClaim extends Model
 
     public function reviewer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'reviewer_id');
+        return $this->belongsTo(Admin::class, 'reviewer_id');
     }
 }

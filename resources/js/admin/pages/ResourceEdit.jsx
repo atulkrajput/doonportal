@@ -7,7 +7,7 @@ import { ErrorState, PageLoading } from '../../components/States';
 import { EntityPicker, Field } from '../components/Fields';
 import { SeoPanel } from '../components/SeoBits';
 import { StatusBadge } from './ResourceList';
-import { useAuth } from '../../context/AuthContext';
+import { useStaff } from '../StaffContext';
 import { PERMISSIONS, TRANSITIONS, can, formatDateTime, humanize, toLocalInput } from '../lib';
 
 const EMPTY_BY_TYPE = { repeater: [], entities: [], relations: [], tags: [], checkbox: false };
@@ -323,7 +323,7 @@ function DangerZone({ resourceKey, resource, record, onChanged }) {
 
 export default function ResourceEdit({ resourceKey, resource }) {
     const { id } = useParams();
-    const { user } = useAuth();
+    const { user } = useStaff();
     const isNew = id === 'new';
     const { data, error, loading } = useApi(isNew ? null : `/admin/${resourceKey}/${id}`);
     const [override, setOverride] = useState(null);

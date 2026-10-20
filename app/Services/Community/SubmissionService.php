@@ -5,6 +5,7 @@ namespace App\Services\Community;
 use App\Enums\RoleName;
 use App\Enums\SubmissionStatus;
 use App\Enums\SubmissionType;
+use App\Models\Admin;
 use App\Models\Business;
 use App\Models\Submission;
 use App\Models\User;
@@ -40,7 +41,7 @@ class SubmissionService
         });
     }
 
-    public function approve(Submission $submission, User $reviewer, ?string $notes = null): Submission
+    public function approve(Submission $submission, Admin $reviewer, ?string $notes = null): Submission
     {
         $this->assertPending($submission);
 
@@ -55,7 +56,7 @@ class SubmissionService
         });
     }
 
-    public function reject(Submission $submission, User $reviewer, string $notes): Submission
+    public function reject(Submission $submission, Admin $reviewer, string $notes): Submission
     {
         $this->assertPending($submission);
 
@@ -124,7 +125,7 @@ class SubmissionService
         $this->businesses->save($business, $submission->payload, 'business.owner_edit_applied');
     }
 
-    private function close(Submission $submission, SubmissionStatus $status, User $reviewer, ?string $notes): Submission
+    private function close(Submission $submission, SubmissionStatus $status, Admin $reviewer, ?string $notes): Submission
     {
         $submission->forceFill([
             'status' => $status,

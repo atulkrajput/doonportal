@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, NavLink, Outlet, Route, Routes, useLocation } from 'react-router';
-import { useAuth } from '../context/AuthContext';
+import { Link, Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router';
+import { StaffProvider, useStaff } from './StaffContext';
+import StaffLogin from './pages/StaffLogin';
 import { PageLoading } from '../components/States';
 import { Icon } from '../components/Icons';
 import { Logo } from '../components/Brand';
@@ -10,7 +11,7 @@ import { MENU } from './menu';
 import Dashboard from './pages/Dashboard';
 import ResourceList from './pages/ResourceList';
 import ResourceEdit from './pages/ResourceEdit';
-import { UserDetail, UserList } from './pages/Users';
+import { MemberDetail, MemberList, StaffDetail, StaffList } from './pages/Users';
 import AuditLogs from './pages/AuditLogs';
 import MediaLibrary from './pages/MediaLibrary';
 import Account from './pages/Account';
@@ -34,7 +35,7 @@ function Forbidden({ title = 'You don’t have access to this section.' }) {
 
 /** Route-level guard. The API enforces the same permission on every request. */
 function Require({ permission, children }) {
-    const { user } = useAuth();
+    const { user } = useStaff();
     return can(user, permission) ? children : <Forbidden />;
 }
 
@@ -129,7 +130,8 @@ function useNoIndex(title) {
 }
 
 function AdminLayout() {
-    const { user, logout } = useAuth();
+    const { user, logout } = useStaff();
+    const navigate = useNavigate();
     const [open, setOpen] = useState(false);
     const { pathname } = useLocation();
     const sectionTitle =
@@ -176,7 +178,7 @@ function AdminLayout() {
                         <a href="/" target="_blank" rel="noreferrer" className="btn-secondary" aria-label="View site">
                             <Icon name="external" size={14} /> <span className="hidden sm:inline">View site</span>
                         </a>
-                        <button type="button" className="btn-secondary" onClick={logout} aria-label="Sign out">
+                        <button type="button" className="btn-secondary" onClick={async () => { await logout(); navigate('/admin/login'); }} aria-label="Sign out">
                             <Icon name="logout" size={14} /> <span className="hidden sm:inline">Sign out</span>
                         </button>
                     </div>
@@ -192,8 +194,10 @@ function AdminLayout() {
 /** Simple permission-guarded pages (path, permission, element). */
 const PAGES = [
     ['media', CONTENT_PERMISSIONS, <MediaLibrary key="media" />],
-    ['users', PERMISSIONS.users, <UserList key="users" />],
-    ['users/:id', PERMISSIONS.users, <UserDetail key="user" />],
+    ['staff', PERMISSIONS.users, <StaffList key="staff" />],
+    ['staff/:id', PERMISSIONS.users, <StaffDetail key="staff-detail" />],
+    ['members', PERMISSIONS.users, <MemberList key="members" />],
+    ['members/:id', PERMISSIONS.users, <MemberDetail key="member" />],
     ['audit-logs', PERMISSIONS.audit, <AuditLogs key="audit" />],
     ['analytics', PERMISSIONS.analytics, <Analytics key="analytics" />],
     ['revenue', PERMISSIONS.monetization, <Revenue key="revenue" />],
@@ -208,15 +212,15 @@ const PAGES = [
     ['reviews', PERMISSIONS.reviews, <ReviewsQueue key="reviews" />],
 ];
 
-export default function AdminApp() {
-    const { user, ready } = useAuth();
+function StaffArea() {
+    const { user, ready } = useStaff();
     const location = useLocation();
 
     if (!ready) {
         return <PageLoading />;
     }
     if (!user) {
-        return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
+        return <Navigate to={`/admin/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
     }
     if (!isStaff(user)) {
         return (
@@ -257,5 +261,17 @@ export default function AdminApp() {
                 <Route path="*" element={<Forbidden title="Page not found." />} />
             </Route>
         </Routes>
+    );
+}
+
+/** /admin/* — staff only, with its own sign-in separate from member accounts. */
+export default function AdminApp() {
+    return (
+        <StaffProvider>
+            <Routes>
+                <Route path="login" element={<StaffLogin />} />
+                <Route path="*" element={<StaffArea />} />
+            </Routes>
+        </StaffProvider>
     );
 }

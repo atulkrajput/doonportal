@@ -21,4 +21,9 @@ class Role extends Model
     {
         return $this->belongsToMany(User::class)->withPivot('created_at');
     }
+
+    public function admins(): BelongsToMany
+    {
+        return $this->belongsToMany(Admin::class)->withPivot('created_at');
+    }
 }

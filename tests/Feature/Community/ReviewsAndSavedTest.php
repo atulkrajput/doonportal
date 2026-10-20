@@ -33,12 +33,12 @@ class ReviewsAndSavedTest extends AdminTestCase
         $this->getJson("/api/v1/businesses/{$business->slug}/reviews")->assertJsonCount(0, 'data');
         $this->getJson("/api/v1/businesses/{$business->slug}/my-review")->assertJsonPath('data.id', $id);
 
-        // Moderators can't publish their own reviews.
-        $moderator = $this->actingAsRole(RoleName::Moderator);
-        $own = Review::factory()->create(['user_id' => $moderator->id, 'status' => ReviewStatus::Pending]);
-        $this->postJson("/api/v1/admin/reviews/{$own->id}/status", ['status' => 'PUBLISHED'])->assertForbidden();
+        // Member tokens can't reach moderation; staff tokens can't write reviews.
+        $this->getJson('/api/v1/admin/reviews')->assertForbidden();
+        $this->actingAsRole(RoleName::Moderator);
+        $this->postJson("/api/v1/businesses/{$business->slug}/reviews", $this->review())->assertForbidden();
 
-        $this->getJson('/api/v1/admin/reviews?status=PENDING')->assertOk()->assertJsonCount(2, 'data');
+        $this->getJson('/api/v1/admin/reviews?status=PENDING')->assertOk()->assertJsonCount(1, 'data');
         $this->postJson("/api/v1/admin/reviews/{$id}/status", ['status' => 'PUBLISHED'])->assertOk()->assertJsonPath('data.status', 'PUBLISHED');
 
         $business->refresh();

@@ -3,6 +3,7 @@
 namespace App\Services\Community;
 
 use App\Enums\ReviewStatus;
+use App\Models\Admin;
 use App\Models\Business;
 use App\Models\Place;
 use App\Models\Review;
@@ -75,7 +76,7 @@ class ReviewService
         });
     }
 
-    public function moderate(Review $review, ReviewStatus $status, User $moderator, ?string $note = null): Review
+    public function moderate(Review $review, ReviewStatus $status, Admin $moderator, ?string $note = null): Review
     {
         if ($status === ReviewStatus::Pending) {
             throw ValidationException::withMessages(['status' => ['Choose publish, reject or hide.']]);
@@ -95,7 +96,7 @@ class ReviewService
     /**
      * The owner's public reply. Null removes it. Staff can also remove a reply.
      */
-    public function reply(Review $review, User $actor, ?string $body): Review
+    public function reply(Review $review, User|Admin $actor, ?string $body): Review
     {
         return DB::transaction(function () use ($review, $actor, $body) {
             $old = $review->owner_reply;

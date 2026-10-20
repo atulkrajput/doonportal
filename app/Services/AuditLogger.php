@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Admin;
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -19,11 +20,12 @@ class AuditLogger
      * @param  array<string, mixed>|null  $old
      * @param  array<string, mixed>|null  $new
      */
-    public function log(string $action, ?Model $subject = null, ?array $old = null, ?array $new = null, ?User $actor = null): AuditLog
+    public function log(string $action, ?Model $subject = null, ?array $old = null, ?array $new = null, User|Admin|null $actor = null): AuditLog
     {
         $request = app()->runningInConsole() && ! app()->runningUnitTests() ? null : request();
 
         return AuditLog::create([
+            'actor_type' => $actor?->getMorphClass() ?? Auth::user()?->getMorphClass(),
             'actor_id' => $actor?->id ?? Auth::id(),
             'action' => $action,
             'auditable_type' => $subject?->getMorphClass(),

@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Admin;
 use App\Models\Setting;
-use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -153,7 +153,7 @@ class SiteSettings
      * @param  array<string, mixed>  $values  already validated against rules()
      * @return array<string, mixed>
      */
-    public function update(string $group, array $values, ?User $actor = null): array
+    public function update(string $group, array $values, ?Admin $actor = null): array
     {
         $old = $this->get($group);
         $new = array_merge($old, Arr::only($values, array_keys(self::defaults($group))));

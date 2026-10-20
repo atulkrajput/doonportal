@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Enums\PublicationStatus;
 use App\Enums\RoleName;
+use App\Models\Admin;
 use App\Models\AuditLog;
 use App\Models\Page;
-use App\Models\User;
 use App\Services\SiteSettings;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SitePagesSeeder;
@@ -25,9 +25,9 @@ class SitePagesTest extends TestCase
         $this->seed([RolePermissionSeeder::class, SitePagesSeeder::class]);
     }
 
-    private function actingAsRole(RoleName $role): User
+    private function actingAsRole(RoleName $role): Admin
     {
-        $user = User::factory()->create()->assignRole(RoleName::User, $role);
+        $user = Admin::factory()->create()->assignRole($role);
         Sanctum::actingAs($user);
 
         return $user;
