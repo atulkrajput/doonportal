@@ -50,14 +50,23 @@ class BusinessDiscovery
      */
     public function run(string $trigger, ?Admin $requestedBy = null, ?string $onlyCategory = null, ?AiRun $queued = null): AiRun
     {
-        $run = $queued ?? new AiRun(['trigger' => $trigger, 'category_slug' => $onlyCategory]);
-        if (! $queued) {
+        if ($queued) {
+            // Claim it atomically: the "Run now" request and the scheduler's
+            // --queued check may both try; only one gets to run it.
+            $claimed = AiRun::whereKey($queued->id)->where('status', AiRun::QUEUED)
+                ->update(['status' => AiRun::RUNNING, 'started_at' => now(), 'updated_at' => now()]);
+            if ($claimed === 0) {
+                return $queued->refresh();
+            }
+            $run = $queued->refresh();
+        } else {
+            $run = new AiRun(['trigger' => $trigger, 'category_slug' => $onlyCategory]);
             $run->requester()->associate($requestedBy);
+            $run->forceFill(['status' => AiRun::RUNNING, 'started_at' => now()])->save();
         }
         $onlyCategory = $run->category_slug;
         $requestedBy = $run->requester;
         $trigger = $run->trigger;
-        $run->forceFill(['status' => AiRun::RUNNING, 'started_at' => now()])->save();
 
         $stats = [];
         $limit = min((int) $this->settings->get('per_category_limit'), (int) config('discovery.max_per_category'));
@@ -69,7 +78,7 @@ class BusinessDiscovery
                 $stats[$category->slug] = $this->discoverCategory($run, $category, $limit);
                 $run->forceFill(['stats' => $stats, 'found_count' => array_sum(array_column($stats, 'queued')), 'ai_tokens' => $this->tokens])->save();
             }
-            $run->forceFill(['status' => AiRun::COMPLETED]);
+            $run->forceFill(['status' => AiRun::COMPLETED, 'error' => $this->osmError ? 'OpenStreetMap was unavailable, so only web search ran: '.$this->osmError : null]);
         } catch (Throwable $e) {
             Log::error('Discovery run failed', ['run' => $run->id, 'error' => $e->getMessage()]);
             $run->forceFill(['status' => AiRun::FAILED, 'error' => Str::limit($e->getMessage(), 1000)]);
@@ -96,10 +105,8 @@ class BusinessDiscovery
         $stat = ['queued' => 0, 'osm' => 0, 'web' => 0, 'skipped_existing' => 0, 'errors' => []];
         $found = [];
 
-        // 1. OpenStreetMap.
-        if (! empty($map['osm']) && $this->osmError !== null) {
-            $stat['errors'][] = 'OpenStreetMap: '.$this->osmError;
-        } elseif (! empty($map['osm'])) {
+        // 1. OpenStreetMap (an outage is recorded once on the run, not per category).
+        if (! empty($map['osm']) && $this->osmError === null) {
             try {
                 $elements = array_values(array_filter($this->osmElements ?? [], fn ($e) => OverpassClient::matches($e, $map['osm'])));
                 // Spread picks across the list rather than always the same corner of the city.

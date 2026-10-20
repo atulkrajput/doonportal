@@ -11,6 +11,7 @@ use App\Models\Business;
 use App\Models\Category;
 use App\Models\Setting;
 use App\Services\AI\AiSettings;
+use App\Services\DataEngine\BusinessDiscovery;
 use Database\Seeders\AreaSeeder;
 use Database\Seeders\CategorySeeder;
 use Illuminate\Http\Client\Factory;
@@ -231,14 +232,59 @@ class DiscoveryTest extends AdminTestCase
         $this->postJson('/api/v1/admin/ai/discoveries/bulk', ['action' => 'approve', 'ids' => [$a->id]])->assertOk()->assertJsonPath('data.done', 1);
         $this->postJson("/api/v1/admin/ai/discoveries/{$b->id}/reject", ['duplicate_of_id' => Business::firstWhere('name', 'Cafe One')->id])->assertOk()->assertJsonPath('data.status', 'DUPLICATE');
 
-        // Run now is queued, then carried out by the scheduler's --queued check.
-        $this->postJson('/api/v1/admin/ai/runs', ['category_slug' => 'cafes'])->assertCreated()->assertJsonPath('data.status', 'queued');
-        $this->postJson('/api/v1/admin/ai/runs')->assertUnprocessable();
+        // Run now starts straight after the response (no cron needed), once a day.
         $this->osmElements = [$this->cafe(9, 'Cafe Nine', [], 30.40, 78.10)];
-        $this->artisan('doon:discover --queued')->assertSuccessful();
-        $this->assertSame(AiRun::COMPLETED, AiRun::latest('created_at')->first()->status);
+        $this->postJson('/api/v1/admin/ai/runs', ['category_slug' => 'cafes'])->assertAccepted();
+        $run = AiRun::where('trigger', 'manual')->sole();
+        $this->assertSame(AiRun::COMPLETED, $run->status);
         $this->assertTrue(AiDiscovery::where('name', 'Cafe Nine')->exists());
         $this->getJson('/api/v1/admin/ai/runs')->assertOk()->assertJsonPath('data.0.found_count', 1);
+
+        $this->postJson('/api/v1/admin/ai/runs')->assertUnprocessable()->assertJsonValidationErrors('run');
+        $this->getJson('/api/v1/admin/ai/runs/status')->assertOk()
+            ->assertJsonPath('data.manual.can_run', false)
+            ->assertJsonPath('data.manual.today.id', $run->id);
+
+        // Tomorrow (IST) it is available again.
+        $this->travelTo(now('Asia/Kolkata')->addDay()->setTime(9, 0));
+        $this->getJson('/api/v1/admin/ai/runs/status')->assertJsonPath('data.manual.can_run', true);
+    }
+
+    public function test_cron_heartbeat_and_stale_runs(): void
+    {
+        $this->actingAsRole(RoleName::Admin);
+
+        $this->getJson('/api/v1/admin/ai/runs/status')->assertOk()
+            ->assertJsonPath('data.cron.healthy', false)
+            ->assertJsonPath('data.cron.last_seen_at', null)
+            ->assertJsonPath('data.cron.command', fn ($c) => str_contains($c, 'php artisan schedule:run'));
+
+        // One scheduler pass records the heartbeat.
+        $this->artisan('schedule:run')->assertSuccessful();
+        $this->getJson('/api/v1/admin/ai/runs/status')->assertJsonPath('data.cron.healthy', true);
+
+        $this->travel(10)->minutes();
+        $this->getJson('/api/v1/admin/ai/runs/status')->assertJsonPath('data.cron.healthy', false);
+
+        // A run the server killed hours ago no longer blocks new runs.
+        $stuck = AiRun::forceCreate(['trigger' => 'schedule', 'status' => AiRun::RUNNING, 'started_at' => now()->subHours(5)]);
+        $stuck->forceFill(['created_at' => now()->subHours(5)])->save();
+        $this->getJson('/api/v1/admin/ai/runs/status')->assertJsonPath('data.active', null)
+            ->assertJsonPath('data.manual.can_run', true);
+        $this->assertSame(AiRun::FAILED, $stuck->fresh()->status);
+    }
+
+    public function test_a_queued_run_is_only_carried_out_once(): void
+    {
+        $this->configure(['use_web_search' => false, 'groq_api_key' => null]);
+        $this->osmElements = [$this->cafe(1, 'Only Once Cafe')];
+        $run = AiRun::forceCreate(['trigger' => 'manual', 'status' => AiRun::QUEUED, 'category_slug' => 'cafes']);
+
+        $this->artisan('doon:discover --queued')->assertSuccessful();
+        app(BusinessDiscovery::class)->run('manual', queued: $run); // second claimant loses
+
+        $this->assertSame(1, AiDiscovery::count());
+        $this->assertSame(AiRun::COMPLETED, $run->fresh()->status);
     }
 
     public function test_one_osm_request_per_run_with_fallback_to_a_mirror(): void
@@ -275,7 +321,8 @@ class DiscoveryTest extends AdminTestCase
 
         $run = AiRun::sole();
         $this->assertSame(AiRun::COMPLETED, $run->status);
-        $this->assertStringContainsString('OpenStreetMap servers are busy', $run->stats['cafes']['errors'][0]);
+        $this->assertStringContainsString('OpenStreetMap servers are busy', $run->error);
+        $this->assertSame([], $run->stats['cafes']['errors'], 'recorded once on the run, not per category');
     }
 
     public function test_healthcare_finds_are_flagged_for_careful_review(): void

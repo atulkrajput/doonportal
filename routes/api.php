@@ -215,7 +215,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 Route::post('discoveries/{discovery:id}/approve', 'approve')->name('discoveries.approve');
                 Route::post('discoveries/{discovery:id}/reject', 'reject')->name('discoveries.reject');
                 Route::get('runs', 'runs')->name('runs.index');
-                Route::post('runs', 'queueRun')->name('runs.store');
+                Route::get('runs/status', 'status')->name('runs.status');
+                Route::post('runs', 'runNow')->name('runs.store');
             });
         });
 

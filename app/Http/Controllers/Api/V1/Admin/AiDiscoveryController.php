@@ -6,7 +6,10 @@ use App\Enums\CategoryType;
 use App\Http\Requests\Admin\AdminIndexRequest;
 use App\Models\AiDiscovery;
 use App\Models\AiRun;
+use App\Services\AI\AiSettings;
+use App\Services\DataEngine\BusinessDiscovery;
 use App\Services\DataEngine\DiscoveryReview;
+use App\Services\DataEngine\SchedulerHealth;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -128,15 +131,28 @@ class AiDiscoveryController extends AdminController
     }
 
     /**
-     * "Run now": queued and picked up by the scheduler within about a minute,
-     * so a long run never ties up a web request.
+     * Cron health and today's runs, for Admin > Discovery runs.
      */
-    public function queueRun(Request $request): JsonResponse
+    public function status(SchedulerHealth $health, AiSettings $settings): JsonResponse
+    {
+        return response()->json(['data' => $health->status($settings)]);
+    }
+
+    /**
+     * Run the discovery now, once a day. It starts right after this response
+     * (so it works even when the cron is not set up); if the server stops it
+     * from starting, the scheduler's --queued check picks it up instead.
+     */
+    public function runNow(Request $request, SchedulerHealth $health): JsonResponse
     {
         $data = $request->validate(['category_slug' => ['nullable', 'string', Rule::in(array_keys(config('discovery.categories')))]]);
 
-        if (AiRun::whereIn('status', [AiRun::QUEUED, AiRun::RUNNING])->where('created_at', '>=', now()->subHours(3))->exists()) {
-            throw ValidationException::withMessages(['run' => ['A discovery run is already queued or running.']]);
+        $health->closeStaleRuns();
+        if ($health->activeRun()) {
+            throw ValidationException::withMessages(['run' => ['A discovery run is already in progress.']]);
+        }
+        if ($health->manualRunToday()) {
+            throw ValidationException::withMessages(['run' => ['The manual run has already been used today. It resets at midnight (IST).']]);
         }
 
         $run = new AiRun(['trigger' => 'manual', 'status' => AiRun::QUEUED, 'category_slug' => $data['category_slug'] ?? null]);
@@ -144,7 +160,17 @@ class AiDiscoveryController extends AdminController
         $run->save();
         $this->audit->log('ai.discovery_requested', $run, null, ['category_slug' => $run->category_slug]);
 
-        return response()->json(['data' => ['id' => $run->id, 'status' => $run->status]], 201);
+        $id = $run->id;
+        dispatch(function () use ($id) {
+            @set_time_limit(0);
+            ignore_user_abort(true);
+            $queued = AiRun::find($id);
+            if ($queued?->status === AiRun::QUEUED) {
+                app(BusinessDiscovery::class)->run('manual', queued: $queued);
+            }
+        })->afterResponse();
+
+        return response()->json(['data' => ['id' => $run->id, 'status' => $run->status]], 202);
     }
 
     /**

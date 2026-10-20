@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { api, errorMessage, fieldErrors } from '../../api/client';
 import { useApi } from '../../hooks/useApi';
@@ -502,22 +502,82 @@ export function AiDiscoveries() {
     );
 }
 
+function ago(iso) {
+    if (!iso) {
+        return 'never';
+    }
+    const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    if (seconds < 90) {
+        return `${seconds} seconds ago`;
+    }
+    if (seconds < 5400) {
+        return `${Math.round(seconds / 60)} minutes ago`;
+    }
+    if (seconds < 129600) {
+        return `${Math.round(seconds / 3600)} hours ago`;
+    }
+    return `${Math.round(seconds / 86400)} days ago`;
+}
+
+function StatusCard({ tone, title, children }) {
+    const tones = {
+        good: 'border-emerald-200 bg-emerald-50',
+        bad: 'border-red-200 bg-red-50',
+        neutral: 'border-stone-200 bg-white',
+    };
+    const dots = { good: 'bg-emerald-500', bad: 'bg-red-500', neutral: 'bg-stone-400' };
+    return (
+        <section className={`rounded-2xl border p-4 text-sm ${tones[tone]}`}>
+            <h2 className="flex items-center gap-2 font-semibold">
+                <span className={`h-2.5 w-2.5 rounded-full ${dots[tone]}`} aria-hidden="true" />
+                {title}
+            </h2>
+            <div className="mt-2 space-y-1 text-stone-700">{children}</div>
+        </section>
+    );
+}
+
 export function AiRuns() {
     const filters = useAdminFilters();
     const [version, setVersion] = useState(0);
     const [category, setCategory] = useState('');
     const [state, setState] = useState(null);
+    const [copied, setCopied] = useState(false);
     const { data, error, loading } = useApi('/admin/ai/runs', { ...filters.all, v: version || undefined });
+    const { data: statusData } = useApi('/admin/ai/runs/status', { v: version || undefined });
     const { data: settings } = useApi('/admin/ai/settings');
+    const status = statusData?.data;
+    const active = status?.active;
+
+    // While a run is going, refresh every 15 seconds to follow it.
+    useEffect(() => {
+        if (!active) {
+            return undefined;
+        }
+        const timer = window.setInterval(() => setVersion((v) => v + 1), 15000);
+        return () => window.clearInterval(timer);
+    }, [active]);
 
     const runNow = async () => {
+        if (!window.confirm('Run today’s discovery now? You can do this once a day. It takes a few minutes; this page updates as it goes.')) {
+            return;
+        }
         setState({ busy: true });
         try {
             await api.post('/admin/ai/runs', category ? { category_slug: category } : {});
-            setState({ message: 'Queued. It starts within a minute (needs the scheduler cron); refresh this page to follow it.' });
+            setState({ message: 'Started. Found businesses appear in AI discoveries as it goes.' });
             setVersion((v) => v + 1);
         } catch (err) {
             setState({ error: fieldErrors(err).run?.[0] || errorMessage(err) });
+        }
+    };
+
+    const copyCommand = async () => {
+        try {
+            await navigator.clipboard.writeText(status.cron.command);
+            setCopied(true);
+        } catch {
+            setCopied(false);
         }
     };
 
@@ -526,23 +586,79 @@ export function AiRuns() {
             <h1 className="font-display text-2xl font-bold">Discovery runs</h1>
             <p className="mb-4 text-sm text-stone-600">
                 {settings?.data?.discovery_enabled
-                    ? `Runs every night at ${settings.data.meta.run_time}, up to ${settings.data.per_category_limit} new businesses per category.`
+                    ? `Up to ${settings.data.per_category_limit} new businesses per category each night.`
                     : 'The nightly run is switched off.'}{' '}
                 <Link to="/admin/ai/settings" className="underline">
                     AI settings
                 </Link>
             </p>
-            <div className="mb-4 flex flex-wrap items-end gap-2 rounded-2xl border border-stone-200 bg-white p-3">
-                <label className="block">
-                    <span className="text-xs font-medium text-stone-600">Category</span>
-                    <input className="input mt-0.5 w-56" placeholder="All (or a slug, e.g. cafes)" value={category} onChange={(e) => setCategory(e.target.value.trim())} />
-                </label>
-                <button type="button" className="btn-primary" disabled={state?.busy} onClick={runNow}>
-                    Run now
-                </button>
-                {state?.message && <p className="text-sm text-emerald-800">{state.message}</p>}
-                {state?.error && <p className="text-sm text-red-700">{state.error}</p>}
-            </div>
+
+            {status && (
+                <div className="mb-4 grid gap-3 lg:grid-cols-3">
+                    <StatusCard tone={status.cron.healthy ? 'good' : 'bad'} title={status.cron.healthy ? 'Cron is running' : 'Cron is not running'}>
+                        <p>Scheduler last ran: {status.cron.last_seen_at ? `${ago(status.cron.last_seen_at)} (${formatDateTime(status.cron.last_seen_at)})` : 'never'}.</p>
+                        {!status.cron.healthy && (
+                            <>
+                                <p>The nightly run needs it. In cPanel → Cron Jobs, add this to run every minute:</p>
+                                <code className="block break-all rounded bg-white p-2 text-xs">{status.cron.command}</code>
+                                <button type="button" className="text-xs font-semibold text-navy-700 underline" onClick={copyCommand}>
+                                    {copied ? 'Copied' : 'Copy command'}
+                                </button>
+                            </>
+                        )}
+                    </StatusCard>
+                    <StatusCard
+                        tone={!status.nightly.enabled ? 'neutral' : status.nightly.last?.status === 'failed' ? 'bad' : 'good'}
+                        title={status.nightly.enabled ? 'Nightly run is on' : 'Nightly run is off'}
+                    >
+                        {status.nightly.enabled && <p>Next: {formatDateTime(status.nightly.next_at)}.</p>}
+                        <p>
+                            Last nightly run:{' '}
+                            {status.nightly.last
+                                ? `${formatDateTime(status.nightly.last.started_at || status.nightly.last.created_at)}, ${humanize(status.nightly.last.status).toLowerCase()}, ${status.nightly.last.found_count} found`
+                                : 'none yet'}
+                            .
+                        </p>
+                        {!status.nightly.enabled && (
+                            <p>
+                                Switch it on in{' '}
+                                <Link to="/admin/ai/settings" className="underline">
+                                    AI settings
+                                </Link>
+                                .
+                            </p>
+                        )}
+                    </StatusCard>
+                    <StatusCard tone={active ? 'neutral' : status.manual.can_run ? 'good' : 'neutral'} title="Run manually (once a day)">
+                        {active ? (
+                            <p className="font-semibold text-amber-800">
+                                A run is in progress (started {ago(active.started_at || active.created_at)}), {active.found_count} found so far.
+                            </p>
+                        ) : status.manual.today ? (
+                            <p>
+                                Used today at {formatDateTime(status.manual.today.created_at)}: {humanize(status.manual.today.status).toLowerCase()}, {status.manual.today.found_count} found.
+                            </p>
+                        ) : (
+                            <p>Starts straight away, even if the cron isn’t set up.</p>
+                        )}
+                        {status.manual.can_run && (
+                            <div className="flex flex-wrap items-end gap-2 pt-1">
+                                <label className="block">
+                                    <span className="text-xs text-stone-600">Category (optional)</span>
+                                    <input className="input mt-0.5 w-40" placeholder="All, or e.g. cafes" value={category} onChange={(e) => setCategory(e.target.value.trim())} />
+                                </label>
+                                <button type="button" className="btn-primary" disabled={state?.busy} onClick={runNow}>
+                                    {state?.busy ? 'Starting…' : 'Run today’s discovery'}
+                                </button>
+                            </div>
+                        )}
+                        {!status.manual.can_run && !active && <p className="text-xs text-stone-500">{status.manual.reason}</p>}
+                        {state?.message && <p className="text-emerald-800">{state.message}</p>}
+                        {state?.error && <p className="text-red-700">{state.error}</p>}
+                    </StatusCard>
+                </div>
+            )}
+
             {error && <ErrorState error={error} />}
             {loading && !data && <p className="text-sm text-stone-500">Loading…</p>}
             <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
@@ -572,7 +688,7 @@ export function AiRuns() {
                                     <td className="px-3 py-2 tabular-nums">{r.found_count}</td>
                                     <td className="px-3 py-2 tabular-nums">{formatNumber(r.ai_tokens)}</td>
                                     <td className="px-3 py-2 text-xs text-stone-600">
-                                        {r.error && <p className="text-red-700">{r.error}</p>}
+                                        {r.error && <p className={r.status === 'failed' ? 'text-red-700' : 'text-amber-800'}>{r.error}</p>}
                                         {Object.entries(r.stats || {})
                                             .filter(([, s]) => s.queued > 0)
                                             .map(([slug, s]) => `${slug} ${s.queued}`)
