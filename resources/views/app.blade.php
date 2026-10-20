@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#1b3461">
+    {{-- CSP nonce (App\Http\Middleware\SecurityHeaders): read by Vite's dev client and resources/js/lib/consent.js. --}}
+    <meta property="csp-nonce" nonce="{{ Vite::cspNonce() }}">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 
     {{-- SEO: resolved server-side by App\Services\Seo\SeoResolver; the SPA keeps it in sync on navigation. --}}
