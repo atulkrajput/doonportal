@@ -10,7 +10,15 @@ version: 2.1
 #   FTP_PASSWORD  - FTP password
 #   FTP_PATH      - remote app directory, relative to the FTP login root (e.g. public_html)
 #   FTP_PORT      - FTP port (optional, defaults to 21)
-#   FTP_VERIFY_CERT - set to "no" only if the host's FTPS certificate doesn't match FTP_HOST
+#   FTP_CERT_FINGERPRINT - SHA-1 fingerprint of the host's FTPS certificate (optional,
+#                   defaults to the one pinned below). The host's certificate is issued
+#                   for its own server name, not FTP_HOST, so this one certificate is
+#                   trusted despite the name mismatch and any other is rejected. When the
+#                   host renews it, the deploy fails with "certificate common name doesn't
+#                   match" and the new fingerprint: put that in this variable.
+#   FTP_VERIFY_CERT - leave unset. "no" turns off certificate checks entirely.
+#
+# The connection must use TLS (ftp:ssl-force); it never falls back to plain FTP.
 #
 # Never uploaded or deleted on the server: .env, storage/app, storage/logs,
 # storage/framework/{cache,sessions,views} and public/storage. Create the server's
@@ -90,8 +98,10 @@ jobs:
           name: Sync files to server over FTP
           command: |
             lftp -u "$FTP_USER","$FTP_PASSWORD" -p "${FTP_PORT:-21}" "$FTP_HOST" \<<EOF
-            set ftp:ssl-allow true
+            set ftp:ssl-force true
+            set ftp:ssl-protect-data true
             set ssl:verify-certificate ${FTP_VERIFY_CERT:-yes}
+            set ssl:verify-certificate/${FTP_CERT_FINGERPRINT:-69:92:4B:8A:19:A2:45:C8:80:EB:2E:50:2D:FD:4B:BE:5B:66:72:16} no
             set net:max-retries 3
             set net:timeout 30
             mirror --reverse --delete --verbose --parallel=4 \
