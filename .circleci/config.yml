@@ -89,7 +89,7 @@ jobs:
       - run:
           name: Sync files to server over FTP
           command: |
-            lftp -u "$FTP_USER","$FTP_PASSWORD" -p "${FTP_PORT:-21}" "$FTP_HOST" <<EOF
+            lftp -u "$FTP_USER","$FTP_PASSWORD" -p "${FTP_PORT:-21}" "$FTP_HOST" \<<EOF
             set ftp:ssl-allow true
             set ssl:verify-certificate ${FTP_VERIFY_CERT:-yes}
             set net:max-retries 3
