@@ -21,7 +21,8 @@ version: 2.1
 # The connection must use TLS (ftp:ssl-force); it never falls back to plain FTP.
 #
 # Never uploaded or deleted on the server: .env, storage/app, storage/logs,
-# storage/framework/{cache,sessions,views} and public/storage. Create the server's
+# storage/framework/{cache,sessions,views} and public/storage (the deploy only creates
+# those storage folders when they are missing). Create the server's
 # .env by hand once. Migrations can't run over FTP: run `php artisan migrate --force`
 # from the host's terminal (e.g. cPanel) when a deploy adds one.
 
@@ -104,6 +105,7 @@ jobs:
             set ssl:verify-certificate/${FTP_CERT_FINGERPRINT:-69:92:4B:8A:19:A2:45:C8:80:EB:2E:50:2D:FD:4B:BE:5B:66:72:16} no
             set net:max-retries 3
             set net:timeout 30
+            mkdir -p -f "$FTP_PATH/storage/app/public" "$FTP_PATH/storage/app/private" "$FTP_PATH/storage/framework/cache/data" "$FTP_PATH/storage/framework/sessions" "$FTP_PATH/storage/framework/views" "$FTP_PATH/storage/logs"
             mirror --reverse --delete --verbose --parallel=4 \
               -x '^\.git/' \
               -x '^\.github/' \
