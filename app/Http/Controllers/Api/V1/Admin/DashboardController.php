@@ -10,6 +10,7 @@ use App\Enums\SubmissionStatus;
 use App\Enums\SubscriptionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AuditLogResource;
+use App\Models\AiDiscovery;
 use App\Models\AnalyticsEvent;
 use App\Models\Area;
 use App\Models\AuditLog;
@@ -91,6 +92,7 @@ class DashboardController extends Controller
             'submissions_pending' => $can(PermissionName::ModerateSubmissions) ? Submission::where('status', SubmissionStatus::Pending->value)->count() : null,
             'claims_pending' => $can(PermissionName::ManageClaims) ? BusinessClaim::where('status', ClaimStatus::Pending->value)->count() : null,
             'reports_open' => $can(PermissionName::ManageReports) ? Report::where('status', ReportStatus::Open->value)->count() : null,
+            'ai_discoveries_pending' => $can(PermissionName::ManageAi) ? AiDiscovery::where('status', AiDiscovery::PENDING)->count() : null,
         ], fn ($v) => $v !== null);
         if ($queues !== []) {
             $data['moderation'] = $queues;

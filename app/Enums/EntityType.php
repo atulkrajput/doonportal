@@ -3,6 +3,8 @@
 namespace App\Enums;
 
 use App\Models\Admin;
+use App\Models\AiDiscovery;
+use App\Models\AiRun;
 use App\Models\Area;
 use App\Models\Business;
 use App\Models\BusinessClaim;
@@ -50,6 +52,8 @@ enum EntityType: string
     case Page = 'page';
     case Submission = 'submission';
     case BusinessClaim = 'business_claim';
+    case AiRun = 'ai_run';
+    case AiDiscovery = 'ai_discovery';
 
     /**
      * @return class-string<Model>
@@ -77,6 +81,8 @@ enum EntityType: string
             self::Page => Page::class,
             self::Submission => Submission::class,
             self::BusinessClaim => BusinessClaim::class,
+            self::AiRun => AiRun::class,
+            self::AiDiscovery => AiDiscovery::class,
         };
     }
 

@@ -203,6 +203,22 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('members/{user:id}', [Admin\MemberController::class, 'show'])->name('members.show');
         });
 
+        // AI data engine: settings, the daily discovery queue and its runs.
+        Route::middleware('can:'.PermissionName::ManageAi->value)->prefix('ai')->name('ai.')->group(function () {
+            Route::get('settings', [Admin\AiSettingsController::class, 'show'])->name('settings.show');
+            Route::put('settings', [Admin\AiSettingsController::class, 'update'])->name('settings.update');
+            Route::post('settings/test', [Admin\AiSettingsController::class, 'test'])->middleware('throttle:10,1')->name('settings.test');
+            Route::controller(Admin\AiDiscoveryController::class)->group(function () {
+                Route::get('discoveries', 'index')->name('discoveries.index');
+                Route::post('discoveries/bulk', 'bulk')->name('discoveries.bulk');
+                Route::patch('discoveries/{discovery:id}', 'update')->name('discoveries.update');
+                Route::post('discoveries/{discovery:id}/approve', 'approve')->name('discoveries.approve');
+                Route::post('discoveries/{discovery:id}/reject', 'reject')->name('discoveries.reject');
+                Route::get('runs', 'runs')->name('runs.index');
+                Route::post('runs', 'queueRun')->name('runs.store');
+            });
+        });
+
         // Community moderation: ownership claims, submissions, reviews.
         Route::controller(Admin\ClaimController::class)->prefix('claims')->name('claims.')
             ->middleware('can:'.PermissionName::ManageClaims->value)->group(function () {

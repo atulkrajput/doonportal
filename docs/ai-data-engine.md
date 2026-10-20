@@ -8,7 +8,9 @@
 | Groq provider (`GroqProvider`, JSON mode, timeouts, retries, key never logged) | Implemented, tested with HTTP fakes |
 | Fake provider for tests/local | Implemented |
 | Config (`config/ai.php`: provider, model, timeout, daily/monthly token budgets) | Implemented |
-| Ingestion pipeline, `ai_*` tables, jobs, admin review queue | **Not started — Phase 14** |
+| OpenAI provider; provider, model and keys editable in Admin > AI settings (keys encrypted, write-only) | Implemented and tested |
+| Daily business discovery (`doon:discover`, 1 AM IST): OpenStreetMap + Tavily web search + AI extraction/description, dedupe, review queue (Admin > AI discoveries), runs log | Implemented and tested (first slice of the pipeline below) |
+| Full pipeline for places/events, change detection on existing listings, auto-publish | Not started |
 
 Environment:
 
@@ -23,6 +25,18 @@ AI_MONTHLY_TOKEN_BUDGET=10000000
 ```
 
 `AIProvider::chatJson()` returns an `AIResponse` with the decoded JSON object, provider, model and token usage. The data is **untrusted**: callers must validate it against a schema before use.
+
+## Daily business discovery (built)
+
+Every night at 01:00 IST (`routes/console.php`, needs the cron `* * * * * php artisan schedule:run`), when switched on in Admin > AI settings:
+
+1. One OpenStreetMap (Overpass) query for all mapped business categories inside the Dehradun bounding box (`config/discovery.php`), with fallback mirrors when the public server is busy.
+2. Per category, up to the configured number (default 5) of named places not already listed (same phone, or similar name within 250 m) and never queued before (unique `source + external_id`).
+3. If that is short and web search is on: one Tavily search per category; the AI lists businesses the pages name; a name is kept only if the page text contains it, and a phone/website/address only if the page contains it. Directories and aggregators are excluded.
+4. The AI writes a neutral description from the source facts only, with a confidence and flags (not a business, wrong category, may be closed, chain); healthcare finds are flagged for careful checks.
+5. Everything waits in Admin > AI discoveries (`ai_discoveries`). Staff edit, approve (one or in bulk) or reject / mark duplicate. Approval creates a published **UNVERIFIED** listing through `BusinessWriter`, credited to the source (`source_name` "OpenStreetMap contributors" or the web domain, `source_url`), with hours parsed from OSM `opening_hours` when unambiguous. Runs are logged in `ai_runs` (Admin > Discovery runs); "Run now" queues a run that the scheduler starts within a minute.
+
+AI calls stop for the day once `AI_DAILY_TOKEN_BUDGET` is used; OpenStreetMap discovery continues without AI. The footer credits © OpenStreetMap contributors (ODbL).
 
 ## Target pipeline (Phase 14)
 

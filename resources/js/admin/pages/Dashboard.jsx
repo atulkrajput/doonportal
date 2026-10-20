@@ -7,6 +7,7 @@ const QUEUE_LINKS = {
     claims_pending: '/admin/claims',
     submissions_pending: '/admin/submissions',
     reviews_pending: '/admin/reviews',
+    ai_discoveries_pending: '/admin/ai/discoveries',
 };
 
 function Card({ title, to, total, children }) {

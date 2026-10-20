@@ -15,7 +15,10 @@ class StaffMigrationTest extends AdminTestCase
 {
     public function test_existing_staff_users_become_staff_accounts(): void
     {
-        Artisan::call('migrate:rollback', ['--path' => 'database/migrations/2026_10_22_100000_create_admins_table.php', '--force' => true]);
+        // Roll back the admins migration and every later one (they may reference admins).
+        $later = collect(glob(database_path('migrations/*.php')))->map(fn ($f) => 'database/migrations/'.basename($f))
+            ->filter(fn ($f) => basename($f) >= '2026_10_22_100000_create_admins_table.php')->values()->all();
+        Artisan::call('migrate:rollback', ['--path' => $later, '--force' => true]);
 
         $roles = DB::table('roles')->pluck('id', 'name');
         $staffId = (string) Str::ulid();

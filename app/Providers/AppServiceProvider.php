@@ -5,10 +5,12 @@ namespace App\Providers;
 use App\AI\AIProvider;
 use App\AI\Providers\FakeProvider;
 use App\AI\Providers\GroqProvider;
+use App\AI\Providers\OpenAIProvider;
 use App\Enums\EntityType;
 use App\Enums\PermissionName;
 use App\Models\Admin;
 use App\Models\User;
+use App\Services\AI\AiSettings;
 use App\Services\Search\DatabaseSearchService;
 use App\Services\Search\SearchService;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -25,12 +27,19 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(AIProvider::class, function ($app) {
-            $name = config('ai.default');
+        $this->app->singleton(AiSettings::class);
+
+        // Provider, model and key come from Admin > AI settings (falling back to .env).
+        $this->app->bind(AIProvider::class, function ($app) {
+            if (config('ai.default') === 'fake') {
+                return new FakeProvider;
+            }
+            $settings = $app->make(AiSettings::class);
+            $name = $settings->get('provider');
 
             return match ($name) {
-                'groq' => new GroqProvider(config('ai.providers.groq')),
-                'fake' => new FakeProvider,
+                'groq' => new GroqProvider($settings->providerConfig('groq')),
+                'openai' => new OpenAIProvider($settings->providerConfig('openai')),
                 default => throw new InvalidArgumentException("Unsupported AI provider [{$name}]."),
             };
         });

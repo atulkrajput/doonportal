@@ -41,6 +41,7 @@ CI (`.github/workflows/tests.yml`) runs the same on PHP 8.2/8.3 against SQLite a
 - [ ] First staff account: `php artisan staff:create` (asks for name, email and password; `--role=` defaults to SUPER_ADMIN), then sign in at `/admin/login`. Add more staff from Admin > Staff. Staff accounts are separate from member accounts.
 - [ ] Sign in with Google (optional): in Google Cloud Console create an OAuth client ID of type "Web application", add the site origin (e.g. `https://doonportal.com`) under Authorised JavaScript origins, set `GOOGLE_CLIENT_ID`, then `php artisan optimize`. No client secret is needed.
 - [ ] Queue worker (`php artisan queue:work`) under a supervisor; scheduler cron `* * * * * php artisan schedule:run`
+- [ ] Scheduler cron is required for the nightly AI discovery (01:00 IST) and Admin > Discovery runs > Run now. Set keys and switch it on in Admin > AI settings.
 - [ ] `php artisan config:cache route:cache view:cache` and `npm run build` artefacts deployed
 - [ ] Storage: object storage + CDN for media; `php artisan storage:link` if local disk
 - [ ] Mail provider configured for password resets

@@ -163,7 +163,12 @@ function Footer() {
             </div>
             <div className="border-t border-white/10">
                 <div className="container-page flex flex-wrap items-center justify-between gap-3 py-4 text-xs text-navy-200">
-                    <p>© {new Date().getFullYear()} DoonPortal · Dehradun, Uttarakhand</p>
+                    <p>
+                        © {new Date().getFullYear()} DoonPortal · Dehradun, Uttarakhand · Some listing data ©{' '}
+                        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline hover:text-accent-400">
+                            OpenStreetMap contributors
+                        </a>
+                    </p>
                     <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-4 gap-y-1">
                         <Link to="/privacy" className="hover:text-accent-400">
                             Privacy

@@ -20,6 +20,7 @@ export const PERMISSIONS = {
     claims: 'claims.manage',
     submissions: 'submissions.moderate',
     reviews: 'reviews.moderate',
+    ai: 'ai.manage',
 };
 
 export const CONTENT_PERMISSIONS = [

@@ -36,6 +36,16 @@ export const MENU = [
         ],
     },
     {
+        id: 'ai',
+        label: 'AI data engine',
+        icon: 'sparkles',
+        items: [
+            { to: '/admin/ai/discoveries', label: 'AI discoveries', permission: PERMISSIONS.ai },
+            { to: '/admin/ai/runs', label: 'Discovery runs', permission: PERMISSIONS.ai },
+            { to: '/admin/ai/settings', label: 'AI settings', permission: PERMISSIONS.ai },
+        ],
+    },
+    {
         id: 'events',
         label: 'Events',
         icon: 'calendar',

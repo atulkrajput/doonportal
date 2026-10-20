@@ -20,6 +20,7 @@ import Revenue from './pages/Revenue';
 import { SeoAudit, SeoPages, SeoSettings } from './pages/Seo';
 import { LegalSettings, SocialSettings, TrackingSettings } from './pages/Settings';
 import { ClaimsQueue, ReviewsQueue, SubmissionsQueue } from './pages/Moderation';
+import { AiDiscoveries, AiRuns, AiSettingsPage } from './pages/Ai';
 
 function Forbidden({ title = 'You don’t have access to this section.' }) {
     return (
@@ -210,6 +211,9 @@ const PAGES = [
     ['claims', PERMISSIONS.claims, <ClaimsQueue key="claims" />],
     ['submissions', PERMISSIONS.submissions, <SubmissionsQueue key="submissions" />],
     ['reviews', PERMISSIONS.reviews, <ReviewsQueue key="reviews" />],
+    ['ai/discoveries', PERMISSIONS.ai, <AiDiscoveries key="ai-discoveries" />],
+    ['ai/runs', PERMISSIONS.ai, <AiRuns key="ai-runs" />],
+    ['ai/settings', PERMISSIONS.ai, <AiSettingsPage key="ai-settings" />],
 ];
 
 function StaffArea() {
