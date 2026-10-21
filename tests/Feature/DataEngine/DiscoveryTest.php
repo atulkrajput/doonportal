@@ -112,6 +112,28 @@ class DiscoveryTest extends AdminTestCase
         $this->putJson('/api/v1/admin/ai/settings', [...$payload, 'per_category_limit' => 50])->assertUnprocessable()->assertJsonValidationErrors('per_category_limit');
     }
 
+    public function test_key_test_explains_an_unknown_model_and_lists_usable_ones(): void
+    {
+        $this->configure(['groq_model' => 'llama-retired-70b']);
+        Http::swap(new Factory);
+        Http::fake([
+            'api.groq.com/openai/v1/chat/completions' => Http::response(['error' => [
+                'message' => 'The model `llama-retired-70b` does not exist or you do not have access to it.',
+                'type' => 'invalid_request_error', 'code' => 'model_not_found',
+            ]], 404),
+            'api.groq.com/openai/v1/models' => Http::response(['data' => [
+                ['id' => 'llama-3.1-8b-instant'], ['id' => 'openai/gpt-oss-120b'], ['id' => 'whisper-large-v3'],
+            ]]),
+        ]);
+        $this->actingAsRole(RoleName::Admin);
+
+        $this->postJson('/api/v1/admin/ai/settings/test')->assertOk()
+            ->assertJsonPath('data.ai.ok', false)
+            ->assertJsonPath('data.ai.message', 'Groq request failed with HTTP 404: The model `llama-retired-70b` does not exist or you do not have access to it.')
+            ->assertJsonPath('data.models.current_available', false)
+            ->assertJsonPath('data.models.available', ['llama-3.1-8b-instant', 'openai/gpt-oss-120b']);
+    }
+
     public function test_daily_run_queues_new_osm_businesses_up_to_the_limit(): void
     {
         $this->configure(['use_web_search' => false]);

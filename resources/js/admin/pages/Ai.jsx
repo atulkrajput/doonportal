@@ -210,6 +210,30 @@ export function AiSettingsPage() {
                     {test.ai && <p className={test.ai.ok ? 'text-emerald-800' : 'text-red-700'}>AI: {test.ai.message}</p>}
                     {test.web_search && <p className={test.web_search.ok ? 'text-emerald-800' : 'text-red-700'}>Web search: {test.web_search.message}</p>}
                     {!test.error && !test.web_search && <p className="text-stone-500">Web search: no Tavily key saved.</p>}
+                    {test.models && (
+                        <div className="mt-2 border-t border-stone-100 pt-2">
+                            {test.models.current_available ? (
+                                <p className="text-emerald-800">Model “{test.models.current}” is available for this key.</p>
+                            ) : (
+                                <p className="font-semibold text-red-700">
+                                    Model “{test.models.current}” isn’t available for this key (it may have been retired). Pick one below, then Save settings and test again.
+                                </p>
+                            )}
+                            <p className="mt-1 text-xs text-stone-500">Models this key can use:</p>
+                            <div className="mt-1 flex flex-wrap gap-1.5">
+                                {test.models.available.map((m) => (
+                                    <button
+                                        key={m}
+                                        type="button"
+                                        onClick={() => set(`${test.models.provider}_model`, m)}
+                                        className={`rounded-full border px-2 py-0.5 text-xs ${current[`${test.models.provider}_model`] === m ? 'border-navy-600 bg-navy-50 font-semibold text-navy-700' : 'border-stone-300 hover:border-navy-500'}`}
+                                    >
+                                        {m}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </form>

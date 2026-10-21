@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\AI\AIProvider;
 use App\AI\AIProviderException;
+use App\AI\Providers\OpenAiCompatibleProvider;
 use App\Services\AI\AiSettings;
 use App\Services\DataEngine\TavilyClient;
 use Illuminate\Http\JsonResponse;
@@ -43,6 +44,23 @@ class AiSettingsController extends AdminController
             $result['ai'] = ['ok' => ($response->data['ok'] ?? false) === true, 'message' => "{$response->provider} ({$response->model}) answered."];
         } catch (AIProviderException $e) {
             $result['ai'] = ['ok' => false, 'message' => $e->getMessage()];
+        }
+
+        // Which models this key can use, so a retired or mistyped model is easy to fix.
+        $provider = app(AIProvider::class);
+        if ($provider instanceof OpenAiCompatibleProvider) {
+            $model = $settings->get($settings->get('provider').'_model');
+            try {
+                $models = $provider->models();
+                $result['models'] = [
+                    'provider' => $settings->get('provider'),
+                    'current' => $model,
+                    'current_available' => in_array($model, $models, true),
+                    'available' => $models,
+                ];
+            } catch (AIProviderException) {
+                $result['models'] = null;
+            }
         }
 
         if (filled($settings->get('tavily_api_key'))) {
