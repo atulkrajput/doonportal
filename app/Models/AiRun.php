@@ -19,6 +19,11 @@ class AiRun extends Model
 
     public const RUNNING = 'running';
 
+    /** Staff pressed Stop; the run ends after the current category. */
+    public const STOPPING = 'stopping';
+
+    public const STOPPED = 'stopped';
+
     public const COMPLETED = 'completed';
 
     public const FAILED = 'failed';

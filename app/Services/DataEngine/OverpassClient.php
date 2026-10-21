@@ -4,6 +4,7 @@ namespace App\Services\DataEngine;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
@@ -14,6 +15,8 @@ use RuntimeException;
  */
 class OverpassClient
 {
+    public function __construct(private readonly RunLog $log) {}
+
     /**
      * Named elements carrying any of the tags, inside the bounding box.
      *
@@ -21,7 +24,7 @@ class OverpassClient
      * @param  array{0: float, 1: float, 2: float, 3: float}  $bbox  south, west, north, east
      * @return list<array{type: string, id: int, lat: ?float, lon: ?float, tags: array<string, string>}>
      */
-    public function find(array $tags, array $bbox, int $max = 5000): array
+    public function find(array $tags, array $bbox, int $max = 5000, ?\DateTimeInterface $deadline = null): array
     {
         $tags = array_values(array_unique($tags));
         if ($tags === []) {
@@ -39,7 +42,7 @@ class OverpassClient
         })->implode("\n");
 
         $query = "[out:json][timeout:180];\n(\n{$clauses}\n);\nout center tags {$max};";
-        $response = $this->post($query);
+        $response = $this->post($query, count($tags), $deadline);
 
         return collect($response['elements'] ?? [])
             ->filter(fn ($e) => is_array($e) && filled($e['tags']['name'] ?? null))
@@ -76,31 +79,55 @@ class OverpassClient
      *
      * @return array<string, mixed>
      */
-    private function post(string $query): array
+    private function post(string $query, int $tagCount, ?\DateTimeInterface $deadline): array
     {
         $errors = [];
         foreach ((array) config('discovery.overpass_urls') as $i => $url) {
+            $host = parse_url($url, PHP_URL_HOST);
             if ($i > 0) {
                 usleep((int) config('discovery.pause_ms') * 1000 * 4);
             }
+            // Never wait past the run's time limit.
+            $timeout = 200;
+            if ($deadline) {
+                $timeout = min($timeout, now()->diffInSeconds($deadline, false));
+                if ($timeout < 10) {
+                    $errors[] = 'time limit reached';
+                    $this->log->write('osm', "Skipped {$host}: the run's time limit is nearly up.", 'warning');
+
+                    break;
+                }
+            }
+            $started = hrtime(true);
             try {
-                $response = Http::timeout(200)
+                $response = Http::timeout((int) $timeout)
                     ->withHeaders(['User-Agent' => config('discovery.user_agent')])
                     ->asForm()
                     ->post($url, ['data' => $query]);
             } catch (ConnectionException $e) {
-                $errors[] = parse_url($url, PHP_URL_HOST).': no response';
+                $errors[] = "{$host}: no response";
+                $this->log->write('osm', "{$host}: no response (".Str::limit($e->getMessage(), 150).')', 'error', ['duration_ms' => $this->ms($started)]);
 
                 continue;
             }
 
             $json = $response->successful() ? $response->json() : null;
             if (is_array($json) && array_key_exists('elements', $json)) {
+                $this->log->write('osm', "{$host}: ".count($json['elements'])." places for {$tagCount} tag(s)", 'info',
+                    ['http_status' => $response->status(), 'duration_ms' => $this->ms($started)]);
+
                 return $json;
             }
-            $errors[] = parse_url($url, PHP_URL_HOST).": HTTP {$response->status()}";
+            $errors[] = "{$host}: HTTP {$response->status()}";
+            $this->log->write('osm', "{$host}: HTTP {$response->status()} (server busy or error)", 'error',
+                ['http_status' => $response->status(), 'duration_ms' => $this->ms($started)]);
         }
 
         throw new RuntimeException('OpenStreetMap servers are busy ('.implode('; ', $errors).').');
+    }
+
+    private function ms(int $started): int
+    {
+        return (int) round((hrtime(true) - $started) / 1_000_000);
     }
 }

@@ -12,10 +12,22 @@ use RuntimeException;
  */
 class TavilyClient
 {
+    public function __construct(private readonly RunLog $log) {}
+
     /**
      * @return list<array{title: string, url: string, content: string}>
      */
     public function search(string $apiKey, string $query, int $max = 8): array
+    {
+        // Each call is one search on the plan, logged as service "web" (WebSearchBudget counts these).
+        return $this->log->call('web', "Search \"{$query}\"", fn () => $this->request($apiKey, $query, $max),
+            fn (array $results) => ["Search \"{$query}\": ".count($results).' usable result(s)']);
+    }
+
+    /**
+     * @return list<array{title: string, url: string, content: string}>
+     */
+    private function request(string $apiKey, string $query, int $max): array
     {
         try {
             $response = Http::timeout(30)->acceptJson()->retry(1, 1000, throw: false)

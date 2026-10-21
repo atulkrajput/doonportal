@@ -9,10 +9,12 @@ use App\Enums\CategoryType;
 use App\Models\Admin;
 use App\Models\AiDiscovery;
 use App\Models\AiRun;
+use App\Models\AiRunLog;
 use App\Models\Category;
 use App\Services\AI\AiSettings;
 use App\Services\AuditLogger;
 use App\Support\PhoneNumber;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -36,6 +38,16 @@ class BusinessDiscovery
 
     private ?string $osmError = null;
 
+    /** When this run must stop (Admin > AI settings: max run minutes). */
+    private ?Carbon $deadline = null;
+
+    /** Web searches this run may still make (the day's fair share of the monthly plan). */
+    private int $searchesLeft = 0;
+
+    private bool $searchBudgetNoted = false;
+
+    private bool $aiBudgetNoted = false;
+
     public function __construct(
         private readonly AiSettings $settings,
         private readonly OverpassClient $osm,
@@ -43,6 +55,8 @@ class BusinessDiscovery
         private readonly OpeningHoursParser $hours,
         private readonly DuplicateFinder $duplicates,
         private readonly AuditLogger $audit,
+        private readonly RunLog $log,
+        private readonly WebSearchBudget $searchBudget,
     ) {}
 
     /**
@@ -70,17 +84,46 @@ class BusinessDiscovery
 
         $stats = [];
         $limit = min((int) $this->settings->get('per_category_limit'), (int) config('discovery.max_per_category'));
+        $minutes = (int) $this->settings->get('max_run_minutes');
+        $this->deadline = now()->addMinutes($minutes);
+        $this->searchesLeft = $this->webSearchReady() ? $this->searchBudget->allowanceToday() : 0;
+        $this->log->forRun($run);
+        $notes = [];
 
         try {
             $categories = $this->categories($onlyCategory);
+            $this->log->write('run', sprintf('Started: %d categories, up to %d each, %d-minute limit, %d web searches allowed today, AI %s.',
+                $categories->count(), $limit, $minutes, $this->searchesLeft, $this->settings->aiConfigured() ? 'on ('.$this->settings->get('provider').')' : 'off (no key)'));
+
             $this->loadOsm($categories);
+            $done = 0;
             foreach ($categories as $category) {
+                if ($this->stopRequested($run)) {
+                    $notes[] = 'Stopped by staff.';
+                    $run->status = AiRun::STOPPED;
+                    break;
+                }
+                if (now()->greaterThanOrEqualTo($this->deadline)) {
+                    $notes[] = sprintf('Reached the %d-minute limit after %d of %d categories; the rest go first next time.', $minutes, $done, $categories->count());
+                    break;
+                }
+
+                $this->log->category($category->slug);
                 $stats[$category->slug] = $this->discoverCategory($run, $category, $limit);
+                $s = $stats[$category->slug];
+                $this->log->write('run', "{$category->name}: {$s['queued']} queued ({$s['osm']} OpenStreetMap, {$s['web']} web), {$s['skipped_existing']} already listed.");
+                $this->log->category(null);
+                $done++;
                 $run->forceFill(['stats' => $stats, 'found_count' => array_sum(array_column($stats, 'queued')), 'ai_tokens' => $this->tokens])->save();
             }
-            $run->forceFill(['status' => AiRun::COMPLETED, 'error' => $this->osmError ? 'OpenStreetMap was unavailable, so only web search ran: '.$this->osmError : null]);
+
+            if ($this->osmError) {
+                $notes[] = 'OpenStreetMap was unavailable: '.$this->osmError;
+            }
+            $run->forceFill(['status' => $run->status === AiRun::STOPPED ? AiRun::STOPPED : AiRun::COMPLETED, 'error' => $notes ? implode(' ', $notes) : null]);
         } catch (Throwable $e) {
             Log::error('Discovery run failed', ['run' => $run->id, 'error' => $e->getMessage()]);
+            $this->log->write('run', 'Failed: '.$e->getMessage(), 'error');
             $run->forceFill(['status' => AiRun::FAILED, 'error' => Str::limit($e->getMessage(), 1000)]);
         }
 
@@ -91,6 +134,9 @@ class BusinessDiscovery
             'finished_at' => now(),
         ])->save();
 
+        $this->log->write('run', sprintf('Finished (%s): %d queued, %s AI tokens, %d web searches.', $run->status, $run->found_count,
+            number_format($this->tokens), AiRunLog::where('run_id', $run->id)->where('service', 'web')->count()));
+        $this->log->forRun(null);
         $this->audit->log('ai.discovery_run', $run, null, ['status' => $run->status, 'found' => $run->found_count, 'trigger' => $trigger], $requestedBy);
 
         return $run;
@@ -131,8 +177,13 @@ class BusinessDiscovery
             }
         }
 
-        // 2. Web search tops up when OpenStreetMap had too few.
-        if (count($found) < $limit && $this->webSearchReady()) {
+        // 2. Web search tops up when OpenStreetMap had too few, within today's share of the monthly plan.
+        if (count($found) < $limit && $this->webSearchReady() && $this->searchesLeft <= 0 && ! $this->searchBudgetNoted) {
+            $this->searchBudgetNoted = true;
+            $b = $this->searchBudget->summary();
+            $this->log->write('run', "Web search skipped from here: today's share is used ({$b['used_this_month']} of {$b['monthly_limit']} used this month).", 'warning');
+        }
+        if (count($found) < $limit && $this->webSearchReady() && $this->searchesLeft > 0 && now()->lessThan($this->deadline)) {
             try {
                 foreach ($this->fromWeb($category, $map['search'] ?? $category->name, $limit - count($found)) as $candidate) {
                     if ($this->duplicates->existingBusiness($candidate['data'] + ['name' => $candidate['name']]) !== null
@@ -242,6 +293,7 @@ class BusinessDiscovery
         if (! $this->aiAvailable()) {
             return [];
         }
+        $this->searchesLeft--;
         $results = $this->search->search((string) $this->settings->get('tavily_api_key'), "{$what} in Dehradun, Uttarakhand");
         if ($results === []) {
             return [];
@@ -258,7 +310,7 @@ class BusinessDiscovery
                 'Reply with JSON: {"businesses":[{"name":string,"source_id":number,"address":string|null,"phone":string|null,"website":string|null}]}',
             ])],
             ['role' => 'user', 'content' => "Category: {$category->name}. List at most {$wanted}.\n\nSources:\n".json_encode($sources, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)],
-        ]);
+        ], 'Read search results');
         if ($response === null) {
             return [];
         }
@@ -350,7 +402,7 @@ class BusinessDiscovery
                 'Descriptions: at most 2 sentences, under 280 characters, plain text.',
             ])],
             ['role' => 'user', 'content' => "Category: {$category->name}\n".json_encode($facts, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)],
-        ]);
+        ], 'Describe '.count($found).' business(es)');
         if ($response === null) {
             $stat['errors'][] = 'AI descriptions skipped (AI unavailable or over budget).';
 
@@ -378,14 +430,19 @@ class BusinessDiscovery
         return $found;
     }
 
-    private function ask(array $messages): ?AIResponse
+    private function ask(array $messages, string $purpose = 'AI'): ?AIResponse
     {
         if (! $this->aiAvailable()) {
             return null;
         }
 
+        if ($this->deadline && now()->greaterThanOrEqualTo($this->deadline)) {
+            return null;
+        }
+
         try {
-            $response = app(AIProvider::class)->chatJson($messages, ['max_tokens' => 1500]);
+            $response = $this->log->call('ai', $purpose, fn () => app(AIProvider::class)->chatJson($messages, ['max_tokens' => 1500]),
+                fn (AIResponse $r) => ["{$purpose}: {$r->provider} ({$r->model}) answered", ['tokens' => $r->totalTokens()]]);
             $this->tokens += $response->totalTokens();
 
             return $response;
@@ -406,7 +463,13 @@ class BusinessDiscovery
         }
         $spentToday = (int) AiRun::where('started_at', '>=', now('Asia/Kolkata')->startOfDay()->utc())->sum('ai_tokens');
 
-        return $spentToday + $this->tokens < (int) config('ai.budget.daily_tokens');
+        $available = $spentToday + $this->tokens < (int) $this->settings->get('daily_ai_tokens');
+        if (! $available && ! $this->aiBudgetNoted) {
+            $this->aiBudgetNoted = true;
+            $this->log->write('run', 'AI paused for today: the daily token budget is used (Admin > AI settings).', 'warning');
+        }
+
+        return $available;
     }
 
     /**
@@ -422,11 +485,19 @@ class BusinessDiscovery
         }
 
         try {
-            $this->osmElements = $this->osm->find($tags, config('discovery.bbox'));
+            $this->osmElements = $this->osm->find($tags, config('discovery.bbox'), deadline: $this->deadline);
         } catch (Throwable $e) {
             // Web search can still run; each category records the outage.
             $this->osmError = Str::limit($e->getMessage(), 200);
         }
+    }
+
+    /**
+     * Staff pressed Stop (status "stopping").
+     */
+    private function stopRequested(AiRun $run): bool
+    {
+        return AiRun::whereKey($run->id)->value('status') === AiRun::STOPPING;
     }
 
     private function webSearchReady(): bool
@@ -439,9 +510,16 @@ class BusinessDiscovery
      */
     private function categories(?string $only)
     {
-        return Category::query()->where('type', CategoryType::Business->value)->active()
+        $categories = Category::query()->where('type', CategoryType::Business->value)->active()
             ->whereIn('slug', $only ? [$only] : array_keys(config('discovery.categories')))
             ->orderBy('sort_order')->orderBy('name')->get();
+
+        // Rotate: categories done least recently (or never) go first, so a time
+        // limit or the web search allowance never starves the same ones.
+        $lastDone = AiRunLog::where('service', 'run')->whereNotNull('category_slug')
+            ->selectRaw('category_slug, MAX(created_at) as last_at')->groupBy('category_slug')->toBase()->pluck('last_at', 'category_slug');
+
+        return $categories->sortBy(fn (Category $c) => (string) ($lastDone[$c->slug] ?? ''))->values();
     }
 
     private function clean(mixed $value, int $max): ?string

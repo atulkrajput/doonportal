@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { api, errorMessage, fieldErrors } from '../../api/client';
 import { useApi } from '../../hooks/useApi';
@@ -80,6 +80,9 @@ export function AiSettingsPage() {
                 discovery_enabled: Boolean(current.discovery_enabled),
                 per_category_limit: Number(current.per_category_limit),
                 use_web_search: Boolean(current.use_web_search),
+                max_run_minutes: Number(current.max_run_minutes),
+                web_searches_per_month: Number(current.web_searches_per_month),
+                daily_ai_tokens: Number(current.daily_ai_tokens),
                 ...keys,
                 clear,
             };
@@ -156,7 +159,13 @@ export function AiSettingsPage() {
                         />
                     ))}
                 </div>
-                <p className="text-xs text-stone-500">Keys are encrypted and never shown again in full. Daily AI budget: {formatNumber(meta.daily_token_budget)} tokens; AI steps pause when it is used up.</p>
+                <label className="block max-w-xs">
+                    <span className="text-sm font-medium text-stone-700">Daily AI token limit</span>
+                    <input type="number" min={1000} step={1000} className="input mt-1" value={current.daily_ai_tokens} onChange={(e) => set('daily_ai_tokens', e.target.value)} />
+                    {state.errors.daily_ai_tokens && <span className="text-sm text-red-700">{state.errors.daily_ai_tokens[0]}</span>}
+                    <span className="mt-1 block text-xs text-stone-500">AI steps pause for the day once this many tokens are used. A full run uses roughly 300–1,000 tokens per category.</span>
+                </label>
+                <p className="text-xs text-stone-500">Keys are encrypted and never shown again in full.</p>
             </section>
 
             <section className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5">
@@ -176,11 +185,25 @@ export function AiSettingsPage() {
                         At most {formatNumber(maxDaily)} a night across {meta.categories} categories. Usually fewer: only businesses not already listed are added.
                     </span>
                 </label>
+                <label className="block max-w-xs">
+                    <span className="text-sm font-medium text-stone-700">Maximum run time (minutes)</span>
+                    <input type="number" min={5} max={60} className="input mt-1" value={current.max_run_minutes} onChange={(e) => set('max_run_minutes', e.target.value)} />
+                    {state.errors.max_run_minutes && <span className="text-sm text-red-700">{state.errors.max_run_minutes[0]}</span>}
+                    <span className="mt-1 block text-xs text-stone-500">A run stops cleanly at this limit and keeps what it found; categories it didn’t reach go first next time.</span>
+                </label>
                 <label className="flex items-start gap-3 text-sm">
                     <input type="checkbox" className="mt-1 h-4 w-4" checked={Boolean(current.use_web_search)} onChange={(e) => set('use_web_search', e.target.checked)} />
                     <span>
                         <span className="font-semibold">Top up from web search</span>
                         <span className="block text-stone-600">When OpenStreetMap has too few for a category, search the web and let the AI pick out businesses the pages name. Needs a Tavily key and an AI key.</span>
+                    </span>
+                </label>
+                <label className="block max-w-xs">
+                    <span className="text-sm font-medium text-stone-700">Web searches per month (your Tavily plan)</span>
+                    <input type="number" min={0} className="input mt-1" value={current.web_searches_per_month} onChange={(e) => set('web_searches_per_month', e.target.value)} />
+                    {state.errors.web_searches_per_month && <span className="text-sm text-red-700">{state.errors.web_searches_per_month[0]}</span>}
+                    <span className="mt-1 block text-xs text-stone-500">
+                        Spread evenly: each day uses at most its fair share of what’s left this month (about {formatNumber(Math.floor(Number(current.web_searches_per_month || 0) / 30))} a day), only for categories OpenStreetMap couldn’t fill. Key tests count too.
                     </span>
                 </label>
                 <KeyField
@@ -543,6 +566,67 @@ function ago(iso) {
     return `${Math.round(seconds / 86400)} days ago`;
 }
 
+const SERVICE_LABEL = { run: 'Run', osm: 'OpenStreetMap', web: 'Web search', ai: 'AI' };
+const LEVEL_STYLE = { info: 'text-stone-700', warning: 'text-amber-800', error: 'text-red-700' };
+
+/** Step-by-step log of one run; follows new lines while the run is going. */
+function RunLogView({ runId, live }) {
+    const [lines, setLines] = useState([]);
+    const [error, setError] = useState(null);
+    const [lastId, setLastId] = useState(null);
+    const [poll, setPoll] = useState(0);
+
+    useEffect(() => {
+        let cancelled = false;
+        api.get(`/admin/ai/runs/${runId}/logs`, { params: lastId ? { after: lastId } : {} })
+            .then(({ data }) => {
+                if (cancelled || !data.data.length) {
+                    return;
+                }
+                setLines((prev) => [...prev, ...data.data]);
+                setLastId(data.data[data.data.length - 1].id);
+            })
+            .catch((err) => !cancelled && setError(errorMessage(err)));
+        return () => {
+            cancelled = true;
+        };
+        // lastId is advanced by this effect itself; polling is driven by `poll`.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [runId, poll]);
+
+    useEffect(() => {
+        if (!live) {
+            return undefined;
+        }
+        const timer = window.setInterval(() => setPoll((n) => n + 1), 5000);
+        return () => window.clearInterval(timer);
+    }, [live]);
+
+    if (error) {
+        return <p className="text-xs text-red-700">{error}</p>;
+    }
+    if (!lines.length) {
+        return <p className="text-xs text-stone-500">{live ? 'Waiting for the first step…' : 'No log for this run (runs before logging was added have none).'}</p>;
+    }
+    return (
+        <ol className="max-h-80 space-y-0.5 overflow-auto rounded-lg bg-stone-50 p-2 font-mono text-[11px] leading-relaxed">
+            {lines.map((l) => (
+                <li key={l.id} className={LEVEL_STYLE[l.level] || ''}>
+                    <span className="text-stone-400">{new Date(l.at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false })}</span>{' '}
+                    <span className="font-semibold">{SERVICE_LABEL[l.service] || l.service}</span>
+                    {l.category && <span className="text-stone-500"> [{l.category}]</span>} {l.message}
+                    {(l.http_status || l.duration_ms != null || l.tokens) && (
+                        <span className="text-stone-400">
+                            {' '}
+                            ({[l.http_status && `HTTP ${l.http_status}`, l.duration_ms != null && `${(l.duration_ms / 1000).toFixed(1)}s`, l.tokens && `${formatNumber(l.tokens)} tokens`].filter(Boolean).join(', ')})
+                        </span>
+                    )}
+                </li>
+            ))}
+        </ol>
+    );
+}
+
 function StatusCard({ tone, title, children }) {
     const tones = {
         good: 'border-emerald-200 bg-emerald-50',
@@ -567,6 +651,7 @@ export function AiRuns() {
     const [category, setCategory] = useState('');
     const [state, setState] = useState(null);
     const [copied, setCopied] = useState(false);
+    const [openLog, setOpenLog] = useState(null);
     const { data, error, loading } = useApi('/admin/ai/runs', { ...filters.all, v: version || undefined });
     const { data: statusData } = useApi('/admin/ai/runs/status', { v: version || undefined });
     const { data: settings } = useApi('/admin/ai/settings');
@@ -590,6 +675,18 @@ export function AiRuns() {
         try {
             await api.post('/admin/ai/runs', category ? { category_slug: category } : {});
             setState({ message: 'Started. Found businesses appear in AI discoveries as it goes.' });
+            setVersion((v) => v + 1);
+        } catch (err) {
+            setState({ error: fieldErrors(err).run?.[0] || errorMessage(err) });
+        }
+    };
+
+    const stopRun = async () => {
+        if (!window.confirm('Stop this run? It ends after the category it is working on; everything found so far is kept.')) {
+            return;
+        }
+        try {
+            await api.post(`/admin/ai/runs/${active.id}/stop`);
             setVersion((v) => v + 1);
         } catch (err) {
             setState({ error: fieldErrors(err).run?.[0] || errorMessage(err) });
@@ -655,9 +752,17 @@ export function AiRuns() {
                     </StatusCard>
                     <StatusCard tone={active ? 'neutral' : status.manual.can_run ? 'good' : 'neutral'} title="Run manually (once a day)">
                         {active ? (
-                            <p className="font-semibold text-amber-800">
-                                A run is in progress (started {ago(active.started_at || active.created_at)}), {active.found_count} found so far.
-                            </p>
+                            <>
+                                <p className="font-semibold text-amber-800">
+                                    {active.status === 'stopping' ? 'Stopping after the current category…' : `A run is in progress (started ${ago(active.started_at || active.created_at)})`}, {active.found_count} found so far.
+                                </p>
+                                <p className="text-xs text-stone-500">Stops on its own after {status.limits.max_run_minutes} minutes.</p>
+                                {active.status !== 'stopping' && (
+                                    <button type="button" className="btn-secondary mt-1 hover:!border-red-600 hover:!text-red-700" onClick={stopRun}>
+                                        Stop this run
+                                    </button>
+                                )}
+                            </>
                         ) : status.manual.today ? (
                             <p>
                                 Used today at {formatDateTime(status.manual.today.created_at)}: {humanize(status.manual.today.status).toLowerCase()}, {status.manual.today.found_count} found.
@@ -683,6 +788,34 @@ export function AiRuns() {
                 </div>
             )}
 
+            {status && (
+                <div className="mb-4 flex flex-wrap gap-x-6 gap-y-1 rounded-2xl border border-stone-200 bg-white p-3 text-sm">
+                    <span>
+                        <span className="text-stone-500">Web searches:</span>{' '}
+                        {status.limits.web_search.enabled ? (
+                            <>
+                                {formatNumber(status.limits.web_search.used_this_month)} of {formatNumber(status.limits.web_search.monthly_limit)} used this month · {status.limits.web_search.allowance_today} left today
+                            </>
+                        ) : (
+                            'off (no Tavily key or switched off)'
+                        )}
+                    </span>
+                    <span>
+                        <span className="text-stone-500">AI tokens today:</span> {formatNumber(status.limits.ai_tokens.used_today)} of {formatNumber(status.limits.ai_tokens.daily_limit)}
+                    </span>
+                    <span>
+                        <span className="text-stone-500">Time limit:</span> {status.limits.max_run_minutes} minutes per run
+                    </span>
+                </div>
+            )}
+
+            {active && (
+                <section className="mb-4 rounded-2xl border border-amber-200 bg-white p-4">
+                    <h2 className="mb-2 text-sm font-semibold">Live log</h2>
+                    <RunLogView key={active.id} runId={active.id} live />
+                </section>
+            )}
+
             {error && <ErrorState error={error} />}
             {loading && !data && <p className="text-sm text-stone-500">Loading…</p>}
             <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
@@ -701,14 +834,15 @@ export function AiRuns() {
                         {(data?.data || []).map((r) => {
                             const errors = Object.entries(r.stats || {}).flatMap(([slug, s]) => (s.errors || []).map((e) => `${slug}: ${e}`));
                             return (
-                                <tr key={r.id}>
+                                <Fragment key={r.id}>
+                                <tr>
                                     <td className="whitespace-nowrap px-3 py-2">{formatDateTime(r.started_at || r.created_at)}</td>
                                     <td className="px-3 py-2">
                                         {humanize(r.trigger)}
                                         {r.requested_by && <span className="block text-xs text-stone-500">by {r.requested_by}</span>}
                                         {r.category_slug && <span className="block text-xs text-stone-500">{r.category_slug} only</span>}
                                     </td>
-                                    <td className={`px-3 py-2 font-semibold ${r.status === 'failed' ? 'text-red-700' : r.status === 'completed' ? 'text-emerald-800' : 'text-amber-800'}`}>{humanize(r.status)}</td>
+                                    <td className={`px-3 py-2 font-semibold ${r.status === 'failed' ? 'text-red-700' : r.status === 'completed' ? 'text-emerald-800' : r.status === 'stopped' ? 'text-stone-600' : 'text-amber-800'}`}>{humanize(r.status)}</td>
                                     <td className="px-3 py-2 tabular-nums">{r.found_count}</td>
                                     <td className="px-3 py-2 tabular-nums">{formatNumber(r.ai_tokens)}</td>
                                     <td className="px-3 py-2 text-xs text-stone-600">
@@ -718,8 +852,19 @@ export function AiRuns() {
                                             .map(([slug, s]) => `${slug} ${s.queued}`)
                                             .join(' · ')}
                                         {errors.length > 0 && <p className="mt-1 text-amber-800">{errors.slice(0, 3).join(' · ')}{errors.length > 3 ? ` (+${errors.length - 3} more)` : ''}</p>}
+                                        <button type="button" className="mt-1 font-semibold text-navy-700 underline" onClick={() => setOpenLog(openLog === r.id ? null : r.id)} aria-expanded={openLog === r.id}>
+                                            {openLog === r.id ? 'Hide log' : 'View log'}
+                                        </button>
                                     </td>
                                 </tr>
+                                {openLog === r.id && (
+                                    <tr>
+                                        <td colSpan={6} className="bg-stone-50/50 px-3 pb-3">
+                                            <RunLogView runId={r.id} live={['queued', 'running', 'stopping'].includes(r.status)} />
+                                        </td>
+                                    </tr>
+                                )}
+                                </Fragment>
                             );
                         })}
                     </tbody>

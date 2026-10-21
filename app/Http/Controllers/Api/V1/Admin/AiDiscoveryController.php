@@ -6,6 +6,7 @@ use App\Enums\CategoryType;
 use App\Http\Requests\Admin\AdminIndexRequest;
 use App\Models\AiDiscovery;
 use App\Models\AiRun;
+use App\Models\AiRunLog;
 use App\Services\AI\AiSettings;
 use App\Services\DataEngine\BusinessDiscovery;
 use App\Services\DataEngine\DiscoveryReview;
@@ -171,6 +172,48 @@ class AiDiscoveryController extends AdminController
         })->afterResponse();
 
         return response()->json(['data' => ['id' => $run->id, 'status' => $run->status]], 202);
+    }
+
+    /**
+     * Ask a run to stop after the category it is on (or cancel it if it has not started).
+     */
+    public function stop(AiRun $run): JsonResponse
+    {
+        if ($run->status === AiRun::QUEUED) {
+            $run->forceFill(['status' => AiRun::STOPPED, 'finished_at' => now(), 'error' => 'Cancelled by staff before it started.'])->save();
+        } elseif ($run->status === AiRun::RUNNING) {
+            $run->forceFill(['status' => AiRun::STOPPING])->save();
+            AiRunLog::create(['run_id' => $run->id, 'service' => 'run', 'level' => 'warning', 'message' => 'Stop requested by staff; ending after the current category.']);
+        } else {
+            throw ValidationException::withMessages(['run' => ['This run is not in progress.']]);
+        }
+        $this->audit->log('ai.discovery_stopped', $run);
+
+        return response()->json(['data' => ['id' => $run->id, 'status' => $run->status]]);
+    }
+
+    /**
+     * Step-by-step log of a run (oldest first). ?after=<log id> returns only newer lines.
+     */
+    public function logs(Request $request, AiRun $run): JsonResponse
+    {
+        $after = $request->validate(['after' => ['nullable', 'string', 'size:26']])['after'] ?? null;
+
+        $logs = AiRunLog::where('run_id', $run->id)
+            ->when($after, fn ($q) => $q->where('id', '>', $after))
+            ->orderBy('created_at')->orderBy('id')->limit(500)->get();
+
+        return response()->json(['data' => $logs->map(fn (AiRunLog $l) => [
+            'id' => $l->id,
+            'at' => $l->created_at?->toIso8601String(),
+            'service' => $l->service,
+            'level' => $l->level,
+            'category' => $l->category_slug,
+            'message' => $l->message,
+            'http_status' => $l->http_status,
+            'duration_ms' => $l->duration_ms,
+            'tokens' => $l->tokens,
+        ]), 'run' => ['status' => $run->refresh()->status, 'found_count' => $run->found_count]]);
     }
 
     /**

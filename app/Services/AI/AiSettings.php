@@ -42,6 +42,10 @@ class AiSettings
             'discovery_enabled' => false,
             'per_category_limit' => 5,
             'use_web_search' => true,
+            // Guard rails against runaway cost and time.
+            'max_run_minutes' => 30,
+            'web_searches_per_month' => 1000,
+            'daily_ai_tokens' => (int) config('ai.budget.daily_tokens', 200000),
         ];
     }
 
@@ -57,6 +61,9 @@ class AiSettings
             'discovery_enabled' => ['required', 'boolean'],
             'per_category_limit' => ['required', 'integer', 'between:1,'.config('discovery.max_per_category')],
             'use_web_search' => ['required', 'boolean'],
+            'max_run_minutes' => ['sometimes', 'integer', 'between:5,60'],
+            'web_searches_per_month' => ['sometimes', 'integer', 'between:0,100000'],
+            'daily_ai_tokens' => ['sometimes', 'integer', 'between:1000,10000000'],
             // Blank = keep the saved key; send clear_<key> to remove it.
             'groq_api_key' => ['nullable', 'string', 'max:300'],
             'openai_api_key' => ['nullable', 'string', 'max:300'],

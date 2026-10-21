@@ -11,6 +11,7 @@ use App\Enums\PermissionName;
 use App\Models\Admin;
 use App\Models\User;
 use App\Services\AI\AiSettings;
+use App\Services\DataEngine\RunLog;
 use App\Services\Search\DatabaseSearchService;
 use App\Services\Search\SearchService;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -28,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(AiSettings::class);
+        // One log per process, so the clients write to the run in progress.
+        $this->app->singleton(RunLog::class);
 
         // Provider, model and key come from Admin > AI settings (falling back to .env).
         $this->app->bind(AIProvider::class, function ($app) {

@@ -217,6 +217,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 Route::get('runs', 'runs')->name('runs.index');
                 Route::get('runs/status', 'status')->name('runs.status');
                 Route::post('runs', 'runNow')->name('runs.store');
+                Route::post('runs/{run:id}/stop', 'stop')->name('runs.stop');
+                Route::get('runs/{run:id}/logs', 'logs')->name('runs.logs');
             });
         });
 

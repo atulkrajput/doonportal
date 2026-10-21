@@ -6,16 +6,19 @@ use App\Enums\BusinessStatus;
 use App\Enums\RoleName;
 use App\Models\AiDiscovery;
 use App\Models\AiRun;
+use App\Models\AiRunLog;
 use App\Models\AuditLog;
 use App\Models\Business;
 use App\Models\Category;
 use App\Models\Setting;
 use App\Services\AI\AiSettings;
 use App\Services\DataEngine\BusinessDiscovery;
+use App\Services\DataEngine\WebSearchBudget;
 use Database\Seeders\AreaSeeder;
 use Database\Seeders\CategorySeeder;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Tests\Feature\Admin\AdminTestCase;
 
@@ -345,6 +348,126 @@ class DiscoveryTest extends AdminTestCase
         $this->assertSame(AiRun::COMPLETED, $run->status);
         $this->assertStringContainsString('OpenStreetMap servers are busy', $run->error);
         $this->assertSame([], $run->stats['cafes']['errors'], 'recorded once on the run, not per category');
+    }
+
+    public function test_every_step_is_logged_and_visible_to_staff(): void
+    {
+        $this->configure(['use_web_search' => false]);
+        $this->osmElements = [$this->cafe(1, 'Logged Cafe')];
+
+        $this->artisan('doon:discover --category=cafes')->assertSuccessful();
+        $run = AiRun::sole();
+
+        $this->actingAsRole(RoleName::Admin);
+        $logs = collect($this->getJson("/api/v1/admin/ai/runs/{$run->id}/logs")->assertOk()->json('data'));
+
+        $this->assertStringStartsWith('Started: 1 categories', $logs->first()['message']);
+        $this->assertStringStartsWith('Finished (completed): 1 queued', $logs->last()['message']);
+        $osm = $logs->firstWhere('service', 'osm');
+        $this->assertSame(200, $osm['http_status']);
+        $this->assertStringContainsString('1 places', $osm['message']);
+        $ai = $logs->firstWhere('service', 'ai');
+        $this->assertSame(150, $ai['tokens']);
+        $this->assertSame('cafes', $ai['category']);
+        $this->assertNotNull($ai['duration_ms']);
+        $this->assertStringNotContainsString('gsk_', $logs->pluck('message')->implode(' '), 'keys never reach the log');
+
+        $after = $logs->get(1)['id'];
+        $this->assertCount($logs->count() - 2, $this->getJson("/api/v1/admin/ai/runs/{$run->id}/logs?after={$after}")->json('data'));
+    }
+
+    public function test_runs_stop_at_the_time_limit_and_skipped_categories_go_first_next_time(): void
+    {
+        $this->configure(['use_web_search' => false, 'groq_api_key' => null, 'max_run_minutes' => 5]);
+        Http::swap(new Factory);
+        Http::fake(['overpass-api.de/*' => function () {
+            $this->travel(6)->minutes(); // a slow OpenStreetMap answer uses up the time
+
+            return Http::response(['elements' => [$this->cafe(1, 'Slow Cafe')]]);
+        }]);
+
+        $this->artisan('doon:discover')->assertSuccessful();
+
+        $run = AiRun::sole();
+        $this->assertSame(AiRun::COMPLETED, $run->status);
+        $this->assertStringContainsString('Reached the 5-minute limit after 0 of 2 categories', $run->error);
+
+        // Categories done least recently go first: run "clinics" alone, then the next full run starts with "cafes".
+        Http::swap(new Factory);
+        Http::fake(['overpass-api.de/*' => Http::response(['elements' => []])]);
+        $this->artisan('doon:discover --category=clinics')->assertSuccessful();
+        $this->artisan('doon:discover')->assertSuccessful();
+        $last = AiRun::latest('created_at')->orderByDesc('id')->first();
+        $this->assertSame(['cafes', 'clinics'], array_keys($last->stats));
+    }
+
+    public function test_staff_can_stop_a_run_after_the_current_category(): void
+    {
+        $this->configure(['use_web_search' => false]);
+        $this->osmElements = [$this->cafe(1, 'Stop Cafe')];
+        $run = AiRun::forceCreate(['trigger' => 'manual', 'status' => AiRun::QUEUED]);
+        Http::swap(new Factory);
+        Http::fake([
+            'overpass-api.de/*' => fn () => Http::response(['elements' => $this->osmElements]),
+            // While the first category is described, staff press Stop.
+            'api.groq.com/*' => function (Request $r) use ($run) {
+                $this->actingAsRole(RoleName::Admin);
+                $this->postJson("/api/v1/admin/ai/runs/{$run->id}/stop")->assertOk()->assertJsonPath('data.status', 'stopping');
+
+                return $this->groqReply($r);
+            },
+        ]);
+
+        app(BusinessDiscovery::class)->run('manual', queued: $run);
+
+        $run->refresh();
+        $this->assertSame(AiRun::STOPPED, $run->status);
+        $this->assertCount(1, $run->stats, 'the category in progress finishes; the next one does not start');
+        $this->assertStringContainsString('Stopped by staff', $run->error);
+
+        $this->postJson("/api/v1/admin/ai/runs/{$run->id}/stop")->assertUnprocessable();
+    }
+
+    public function test_web_searches_follow_the_daily_share_of_the_monthly_plan(): void
+    {
+        // 30 Oct: 2 days left. 10 a month with 6 already used leaves 4, so 2 today.
+        $this->travelTo(Carbon::parse('2026-10-30 10:00', 'Asia/Kolkata'));
+        $this->configure(['tavily_api_key' => 'tvly-test-key', 'web_searches_per_month' => 10]);
+        foreach (range(1, 6) as $i) {
+            AiRunLog::forceCreate(['service' => 'web', 'level' => 'info', 'message' => 'earlier search', 'created_at' => now()->subDays(5)]);
+        }
+        $this->assertSame(2, app(WebSearchBudget::class)->allowanceToday());
+
+        config(['discovery.categories' => [
+            'cafes' => ['osm' => [], 'search' => 'cafes'],
+            'bakeries' => ['osm' => [], 'search' => 'bakeries'],
+            'clinics' => ['osm' => [], 'search' => 'clinics'],
+        ]]);
+        $this->webResults = [['title' => 'Doon', 'url' => 'https://example.org/x', 'content' => 'Nothing named here.']];
+
+        $this->artisan('doon:discover')->assertSuccessful();
+
+        $this->assertSame(2, collect(Http::recorded())->filter(fn ($p) => str_contains($p[0]->url(), 'tavily'))->count());
+        $this->assertSame(0, app(WebSearchBudget::class)->allowanceToday());
+
+        $this->actingAsRole(RoleName::Admin);
+        $this->getJson('/api/v1/admin/ai/runs/status')->assertJsonPath('data.limits.web_search.used_this_month', 8)
+            ->assertJsonPath('data.limits.web_search.allowance_today', 0);
+        $this->assertTrue(AiRunLog::where('message', 'like', 'Web search skipped from here%')->exists());
+    }
+
+    public function test_a_run_with_no_progress_past_the_limit_is_marked_failed(): void
+    {
+        $this->configure(['max_run_minutes' => 30]);
+        $recent = AiRun::forceCreate(['trigger' => 'manual', 'status' => AiRun::RUNNING, 'started_at' => now()->subMinutes(35)]);
+        $dead = AiRun::forceCreate(['trigger' => 'manual', 'status' => AiRun::RUNNING, 'started_at' => now()->subMinutes(41)]);
+
+        $this->actingAsRole(RoleName::Admin);
+        $this->getJson('/api/v1/admin/ai/runs/status')->assertOk();
+
+        $this->assertSame(AiRun::RUNNING, $recent->fresh()->status);
+        $this->assertSame(AiRun::FAILED, $dead->fresh()->status);
+        $this->assertStringContainsString('the server ended the process', $dead->fresh()->error);
     }
 
     public function test_healthcare_finds_are_flagged_for_careful_review(): void

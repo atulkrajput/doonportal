@@ -6,6 +6,7 @@ use App\AI\AIProvider;
 use App\AI\AIProviderException;
 use App\AI\Providers\OpenAiCompatibleProvider;
 use App\Services\AI\AiSettings;
+use App\Services\DataEngine\RunLog;
 use App\Services\DataEngine\TavilyClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,10 +38,10 @@ class AiSettingsController extends AdminController
         $result = ['ai' => null, 'web_search' => null];
 
         try {
-            $response = app(AIProvider::class)->chatJson([
+            $response = app(RunLog::class)->call('ai', 'Key test', fn () => app(AIProvider::class)->chatJson([
                 ['role' => 'system', 'content' => 'Reply with JSON only.'],
                 ['role' => 'user', 'content' => 'Reply with {"ok": true}.'],
-            ], ['max_tokens' => 20]);
+            ], ['max_tokens' => 20]), fn ($r) => ["Key test: {$r->provider} ({$r->model}) answered", ['tokens' => $r->totalTokens()]]);
             $result['ai'] = ['ok' => ($response->data['ok'] ?? false) === true, 'message' => "{$response->provider} ({$response->model}) answered."];
         } catch (AIProviderException $e) {
             $result['ai'] = ['ok' => false, 'message' => $e->getMessage()];

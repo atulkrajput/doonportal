@@ -3,6 +3,7 @@
 namespace App\Services\DataEngine;
 
 use App\Models\AiRun;
+use App\Models\AiRunLog;
 use App\Services\AI\AiSettings;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -18,8 +19,10 @@ class SchedulerHealth
     /** The scheduler runs every minute; allow a little slack before warning. */
     private const HEALTHY_WITHIN_MINUTES = 3;
 
-    /** A run still "running" after this long was killed by the server. */
-    public const STALE_AFTER_HOURS = 3;
+    /** Minutes past the run time limit after which a run that is still "running" is taken to be dead. */
+    private const STALE_GRACE_MINUTES = 10;
+
+    public function __construct(private readonly AiSettings $settings, private readonly WebSearchBudget $searches) {}
 
     /**
      * Called by the scheduler every minute (routes/console.php).
@@ -49,13 +52,19 @@ class SchedulerHealth
      */
     public function closeStaleRuns(): void
     {
-        AiRun::whereIn('status', [AiRun::RUNNING, AiRun::QUEUED])
-            ->where('created_at', '<', now()->subHours(self::STALE_AFTER_HOURS))
-            ->update([
-                'status' => AiRun::FAILED,
-                'error' => 'Stopped before finishing (the server ended the process). The next run carries on where this one left off.',
-                'finished_at' => now(),
-            ]);
+        $cutoff = now()->subMinutes((int) $this->settings->get('max_run_minutes') + self::STALE_GRACE_MINUTES);
+
+        AiRun::whereIn('status', [AiRun::RUNNING, AiRun::QUEUED, AiRun::STOPPING])
+            ->where(fn ($q) => $q->where('started_at', '<', $cutoff)->orWhere(fn ($q) => $q->whereNull('started_at')->where('created_at', '<', $cutoff)))
+            ->get()
+            ->each(function (AiRun $run) {
+                $run->forceFill([
+                    'status' => AiRun::FAILED,
+                    'error' => 'Stopped before finishing: the server ended the process (often a hosting time limit). See the run log for the last step. The next run carries on where this one left off.',
+                    'finished_at' => now(),
+                ])->save();
+                AiRunLog::create(['run_id' => $run->id, 'service' => 'run', 'level' => 'error', 'message' => 'Marked failed: no progress within the time limit (the process was ended by the server).']);
+            });
     }
 
     public function todayStart(): Carbon
@@ -70,7 +79,7 @@ class SchedulerHealth
 
     public function activeRun(): ?AiRun
     {
-        return AiRun::whereIn('status', [AiRun::QUEUED, AiRun::RUNNING])->latest('created_at')->first();
+        return AiRun::whereIn('status', [AiRun::QUEUED, AiRun::RUNNING, AiRun::STOPPING])->latest('created_at')->first();
     }
 
     /**
@@ -79,6 +88,7 @@ class SchedulerHealth
     public function status(AiSettings $settings): array
     {
         $this->closeStaleRuns();
+        $aiTokensToday = (int) AiRun::where('started_at', '>=', $this->todayStart())->sum('ai_tokens');
 
         $last = $this->lastTick();
         $nightly = AiRun::where('trigger', 'schedule')->latest('created_at')->first();
@@ -112,6 +122,11 @@ class SchedulerHealth
                 'today' => $manual ? $this->summary($manual) : null,
             ],
             'active' => $active ? $this->summary($active) : null,
+            'limits' => [
+                'max_run_minutes' => (int) $settings->get('max_run_minutes'),
+                'web_search' => $this->searches->summary() + ['enabled' => (bool) $settings->get('use_web_search') && filled($settings->get('tavily_api_key'))],
+                'ai_tokens' => ['used_today' => $aiTokensToday, 'daily_limit' => (int) $settings->get('daily_ai_tokens')],
+            ],
         ];
     }
 
@@ -124,6 +139,7 @@ class SchedulerHealth
             'id' => $run->id,
             'status' => $run->status,
             'found_count' => $run->found_count,
+            'ai_tokens' => $run->ai_tokens,
             'started_at' => $run->started_at?->toIso8601String(),
             'finished_at' => $run->finished_at?->toIso8601String(),
             'created_at' => $run->created_at?->toIso8601String(),

@@ -36,7 +36,9 @@ Every night at 01:00 IST (`routes/console.php`, needs the cron `* * * * * php ar
 4. The AI writes a neutral description from the source facts only, with a confidence and flags (not a business, wrong category, may be closed, chain); healthcare finds are flagged for careful checks.
 5. Everything waits in Admin > AI discoveries (`ai_discoveries`). Staff edit, approve (one or in bulk) or reject / mark duplicate. Approval creates a published **UNVERIFIED** listing through `BusinessWriter`, credited to the source (`source_name` "OpenStreetMap contributors" or the web domain, `source_url`), with hours parsed from OSM `opening_hours` when unambiguous. Runs are logged in `ai_runs`. Admin > Discovery runs shows whether the cron is working (the scheduler records a heartbeat every minute), the nightly status, and a once-a-day "Run today's discovery" button that starts immediately after the request (no cron needed; the scheduler's `--queued` check is the backup). Runs the server killed are marked failed after 3 hours.
 
-AI calls stop for the day once `AI_DAILY_TOKEN_BUDGET` is used; OpenStreetMap discovery continues without AI. The footer credits © OpenStreetMap contributors (ODbL).
+Guard rails (Admin > AI settings): a run stops cleanly at **Maximum run time** (default 30 minutes) and keeps what it found; categories are processed least-recently-done first, so the next run continues with the ones skipped. **Web searches per month** (default 1,000, the Tavily free plan) is spread evenly: each day may use (monthly limit − used before today) ÷ days left in the month, and only for categories OpenStreetMap could not fill; key tests count too. AI pauses for the day at **Daily AI token limit**. Staff can **Stop** a run (it ends after the current category). A run with no progress 10 minutes past the time limit is marked failed.
+
+Every step and external call is written to `ai_run_logs` (service run/osm/web/ai, HTTP status, duration, tokens; never keys or prompts) and shown as a live log in Admin > Discovery runs. The monthly web search count comes from this log. The footer credits © OpenStreetMap contributors (ODbL).
 
 ## Target pipeline (Phase 14)
 
