@@ -75,10 +75,12 @@ class HomeController extends Controller
      */
     private function mapPreview(DiscoveryQuery $discovery): array
     {
-        $businesses = $discovery->businesses()->whereNotNull('latitude')->limit(40)->get()
-            ->map(fn ($b) => ['type' => 'business', 'title' => $b->name, 'path' => "/business/{$b->slug}", 'lat' => $b->latitude, 'lng' => $b->longitude]);
-        $places = $discovery->places()->whereNotNull('latitude')->limit(20)->get()
-            ->map(fn ($p) => ['type' => 'place', 'title' => $p->name, 'path' => "/place/{$p->slug}", 'lat' => $p->latitude, 'lng' => $p->longitude]);
+        $businesses = $discovery->businesses()->whereNotNull('latitude')->with(['primaryArea:id,name', 'categories:id,name'])->limit(100)->get()
+            ->map(fn ($b) => ['type' => 'business', 'title' => $b->name, 'path' => "/business/{$b->slug}", 'lat' => $b->latitude, 'lng' => $b->longitude,
+                'area' => $b->primaryArea?->name, 'category' => $b->categories->first()?->name]);
+        $places = $discovery->places()->whereNotNull('latitude')->with(['primaryArea:id,name', 'categories:id,name'])->limit(40)->get()
+            ->map(fn ($p) => ['type' => 'place', 'title' => $p->name, 'path' => "/place/{$p->slug}", 'lat' => $p->latitude, 'lng' => $p->longitude,
+                'area' => $p->primaryArea?->name, 'category' => $p->categories->first()?->name]);
 
         return $businesses->concat($places)->values()->all();
     }

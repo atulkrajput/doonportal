@@ -1,3 +1,4 @@
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useApi } from '../hooks/useApi';
 import SearchBox from '../components/SearchBox';
@@ -62,32 +63,39 @@ function Block({ items, render, emptyTitle, emptyText }) {
     return <CardGrid>{items.map(render)}</CardGrid>;
 }
 
+// The map library loads only when the map section scrolls into view.
+const DoonMap = lazy(() => import('../components/DoonMap'));
+
 function MapPreview({ markers }) {
+    const holder = useRef(null);
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        if (visible || !holder.current || !markers?.length) {
+            return undefined;
+        }
+        if (!('IntersectionObserver' in window)) {
+            setVisible(true);
+            return undefined;
+        }
+        const observer = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && setVisible(true), { rootMargin: '300px' });
+        observer.observe(holder.current);
+        return () => observer.disconnect();
+    }, [visible, markers]);
+
     if (!markers?.length) {
         return <EmptyState title="The Doon Map is warming up">Listings appear on the map once their locations are confirmed.</EmptyState>;
     }
-    const lats = markers.map((m) => m.lat);
-    const lngs = markers.map((m) => m.lng);
-    const [minLat, maxLat, minLng, maxLng] = [Math.min(...lats), Math.max(...lats), Math.min(...lngs), Math.max(...lngs)];
-    const pos = (m) => ({
-        left: `${8 + ((m.lng - minLng) / (maxLng - minLng || 1)) * 84}%`,
-        top: `${8 + (1 - (m.lat - minLat) / (maxLat - minLat || 1)) * 84}%`,
-    });
+    const placeholder = <div className="h-[24rem] animate-pulse rounded-2xl border border-stone-200 bg-navy-50 sm:h-[31rem]" aria-label="Loading map" />;
     return (
-        <div className="relative h-64 overflow-hidden rounded-2xl border border-stone-200 bg-[radial-gradient(circle_at_30%_40%,#dbe3f1,transparent_60%),radial-gradient(circle_at_70%_70%,#fdeedd,transparent_55%)] bg-navy-50">
-            {markers.map((m) => (
-                <Link
-                    key={m.path}
-                    to={m.path}
-                    style={pos(m)}
-                    title={m.title}
-                    aria-label={m.title}
-                    className={`absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow ${m.type === 'place' ? 'bg-teal-600' : 'bg-navy-600'} hover:scale-150`}
-                />
-            ))}
-            <p className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs text-stone-600">
-                {markers.length} mapped listings · full interactive map coming soon
-            </p>
+        <div ref={holder}>
+            {visible ? (
+                <Suspense fallback={placeholder}>
+                    <DoonMap markers={markers} />
+                </Suspense>
+            ) : (
+                placeholder
+            )}
         </div>
     );
 }
@@ -203,7 +211,7 @@ export default function Home() {
                         )}
                     </Section>
 
-                    <Section title="Doon Map">
+                    <Section title="Doon Map" subtitle="Businesses and places with confirmed locations. Tap a pin for details.">
                         <MapPreview markers={home.map_preview} />
                     </Section>
 

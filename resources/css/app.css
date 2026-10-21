@@ -129,4 +129,21 @@
     .prose-story blockquote {
         @apply my-6 border-l-4 border-accent-400 pl-4 italic text-stone-700;
     }
+
+    /* Doon Map popups (components/DoonMap.jsx). */
+    .doon-map-popup {
+        @apply font-sans text-sm;
+    }
+
+    .doon-map-popup .doon-map-popup-title {
+        @apply block font-semibold text-ink no-underline hover:text-navy-700;
+    }
+
+    .doon-map-popup p {
+        @apply my-1 text-xs text-stone-500;
+    }
+
+    .doon-map-popup .doon-map-popup-link {
+        @apply text-xs font-semibold text-navy-700;
+    }
 }
