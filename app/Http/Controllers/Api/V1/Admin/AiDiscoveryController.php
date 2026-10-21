@@ -153,7 +153,7 @@ class AiDiscoveryController extends AdminController
             throw ValidationException::withMessages(['run' => ['A discovery run is already in progress.']]);
         }
         if ($health->manualRunToday()) {
-            throw ValidationException::withMessages(['run' => ['The manual run has already been used today. It resets at midnight (IST).']]);
+            throw ValidationException::withMessages(['run' => ['Today’s manual run has completed. It resets at midnight (IST); a run that failed or was stopped can be retried.']]);
         }
 
         $run = new AiRun(['trigger' => 'manual', 'status' => AiRun::QUEUED, 'category_slug' => $data['category_slug'] ?? null]);

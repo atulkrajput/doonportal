@@ -90,6 +90,8 @@ class AiSettings
         foreach (self::SECRETS as $key) {
             $values[$key] = $this->decrypt($stored[$key] ?? null) ?? (config(self::ENV_KEYS[$key]) ?: null);
             $values["{$key}_source"] = filled($stored[$key] ?? null) ? 'admin' : (filled(config(self::ENV_KEYS[$key])) ? 'env' : null);
+            // Saved here but cannot be decrypted (APP_KEY changed since): must be entered again.
+            $values["{$key}_unreadable"] = filled($stored[$key] ?? null) && $this->decrypt($stored[$key]) === null;
         }
 
         return $this->cache = $values;
@@ -115,6 +117,7 @@ class AiSettings
                 'set' => filled($all[$key]),
                 'hint' => filled($all[$key]) ? '…'.substr((string) $all[$key], -4) : null,
                 'source' => $all["{$key}_source"],
+                'unreadable' => $all["{$key}_unreadable"],
             ];
         }
 
@@ -133,6 +136,20 @@ class AiSettings
             'api_key' => $this->get("{$provider}_api_key"),
             'model' => $this->get("{$provider}_model") ?: config("ai.providers.{$provider}.model"),
         ];
+    }
+
+    /**
+     * Why web search is not running, or null when it is ready.
+     */
+    public function webSearchBlocker(): ?string
+    {
+        return match (true) {
+            ! $this->get('use_web_search') => 'switched_off',
+            (bool) $this->get('tavily_api_key_unreadable') => 'key_unreadable',
+            blank($this->get('tavily_api_key')) => 'no_key',
+            ! $this->aiConfigured() => 'no_ai_key',
+            default => null,
+        };
     }
 
     public function aiConfigured(): bool

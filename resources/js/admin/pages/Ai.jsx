@@ -38,6 +38,7 @@ function KeyField({ name, state, value, onChange, clear, onClear }) {
                 />
             </label>
             <p className="mt-1 text-xs text-stone-500">
+                {state.unreadable && <span className="font-semibold text-red-700">The saved key can’t be decrypted (the app key changed). Enter it again. </span>}
                 {state.set && state.source === 'env' ? 'Currently from the server .env file. ' : ''}
                 {help}
             </p>
@@ -566,6 +567,13 @@ function ago(iso) {
     return `${Math.round(seconds / 86400)} days ago`;
 }
 
+const WEB_SEARCH_BLOCKERS = {
+    switched_off: '“Top up from web search” is switched off in AI settings.',
+    no_key: 'no Tavily key is saved. Paste it in AI settings and click Save settings.',
+    key_unreadable: 'the saved Tavily key can’t be decrypted (the app key changed). Enter it again in AI settings.',
+    no_ai_key: 'web results need the AI to read them, and no AI key is set for the chosen provider.',
+};
+
 const SERVICE_LABEL = { run: 'Run', osm: 'OpenStreetMap', web: 'Web search', ai: 'AI' };
 const LEVEL_STYLE = { info: 'text-stone-700', warning: 'text-amber-800', error: 'text-red-700' };
 
@@ -764,8 +772,9 @@ export function AiRuns() {
                                 )}
                             </>
                         ) : status.manual.today ? (
-                            <p>
-                                Used today at {formatDateTime(status.manual.today.created_at)}: {humanize(status.manual.today.status).toLowerCase()}, {status.manual.today.found_count} found.
+                            <p className={['failed', 'stopped'].includes(status.manual.today.status) ? 'text-red-700' : undefined}>
+                                Today at {formatDateTime(status.manual.today.created_at)}: {humanize(status.manual.today.status).toLowerCase()}, {status.manual.today.found_count} found.
+                                {status.manual.can_run && ' It didn’t complete, so you can run it again.'}
                             </p>
                         ) : (
                             <p>Starts straight away, even if the cron isn’t set up.</p>
@@ -777,7 +786,7 @@ export function AiRuns() {
                                     <input className="input mt-0.5 w-40" placeholder="All, or e.g. cafes" value={category} onChange={(e) => setCategory(e.target.value.trim())} />
                                 </label>
                                 <button type="button" className="btn-primary" disabled={state?.busy} onClick={runNow}>
-                                    {state?.busy ? 'Starting…' : 'Run today’s discovery'}
+                                    {state?.busy ? 'Starting…' : status.manual.today ? 'Run again' : 'Run today’s discovery'}
                                 </button>
                             </div>
                         )}
@@ -797,7 +806,7 @@ export function AiRuns() {
                                 {formatNumber(status.limits.web_search.used_this_month)} of {formatNumber(status.limits.web_search.monthly_limit)} used this month · {status.limits.web_search.allowance_today} left today
                             </>
                         ) : (
-                            'off (no Tavily key or switched off)'
+                            <span className="text-amber-800">off: {WEB_SEARCH_BLOCKERS[status.limits.web_search.blocker] || 'not ready'}</span>
                         )}
                     </span>
                     <span>

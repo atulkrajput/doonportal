@@ -470,6 +470,55 @@ class DiscoveryTest extends AdminTestCase
         $this->assertStringContainsString('the server ended the process', $dead->fresh()->error);
     }
 
+    public function test_status_says_exactly_why_web_search_is_off(): void
+    {
+        $this->actingAsRole(RoleName::Admin);
+        $blocker = function () {
+            app()->forgetInstance(AiSettings::class);
+
+            return $this->getJson('/api/v1/admin/ai/runs/status')->json('data.limits.web_search');
+        };
+
+        $this->configure(['use_web_search' => false, 'tavily_api_key' => 'tvly-test-key']);
+        $this->assertSame('switched_off', $blocker()['blocker']);
+
+        $this->configure(['use_web_search' => true, 'clear' => ['tavily_api_key']]);
+        $this->assertSame('no_key', $blocker()['blocker']);
+
+        $this->configure(['use_web_search' => true, 'tavily_api_key' => 'tvly-test-key']);
+        $status = $blocker();
+        $this->assertTrue($status['enabled']);
+        $this->assertNull($status['blocker']);
+        $this->assertSame('admin', $status['key_source']);
+
+        // A key saved under a different APP_KEY can no longer be decrypted.
+        $row = Setting::where('group', 'ai')->first();
+        $row->forceFill(['value' => ['tavily_api_key' => 'not-a-valid-encrypted-value'] + $row->value])->save();
+        $this->assertSame('key_unreadable', $blocker()['blocker']);
+        $this->getJson('/api/v1/admin/ai/settings')->assertJsonPath('data.keys.tavily_api_key.unreadable', true);
+    }
+
+    public function test_a_failed_or_stopped_manual_run_can_be_retried_the_same_day(): void
+    {
+        $this->configure(['use_web_search' => false, 'groq_api_key' => null]);
+        $this->osmElements = [$this->cafe(1, 'Retry Cafe')];
+        AiRun::forceCreate(['trigger' => 'manual', 'status' => AiRun::FAILED, 'started_at' => now()->subMinutes(50), 'finished_at' => now()->subMinutes(10)]);
+        AiRun::forceCreate(['trigger' => 'manual', 'status' => AiRun::STOPPED, 'started_at' => now()->subMinutes(9), 'finished_at' => now()->subMinutes(8)]);
+        $this->actingAsRole(RoleName::Admin);
+
+        $this->getJson('/api/v1/admin/ai/runs/status')->assertOk()
+            ->assertJsonPath('data.manual.can_run', true)
+            ->assertJsonPath('data.manual.today.status', 'stopped');
+
+        $this->postJson('/api/v1/admin/ai/runs', ['category_slug' => 'cafes'])->assertAccepted();
+        $this->assertSame(1, AiRun::where('trigger', 'manual')->where('status', AiRun::COMPLETED)->count());
+
+        // Once one completes, the day's manual run is used.
+        $this->getJson('/api/v1/admin/ai/runs/status')->assertJsonPath('data.manual.can_run', false)
+            ->assertJsonPath('data.manual.today.status', 'completed');
+        $this->postJson('/api/v1/admin/ai/runs')->assertUnprocessable()->assertJsonValidationErrors('run');
+    }
+
     public function test_healthcare_finds_are_flagged_for_careful_review(): void
     {
         $this->configure(['use_web_search' => false, 'groq_api_key' => null]);

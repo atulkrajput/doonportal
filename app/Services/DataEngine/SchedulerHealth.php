@@ -72,9 +72,23 @@ class SchedulerHealth
         return now('Asia/Kolkata')->startOfDay()->utc();
     }
 
+    /**
+     * The manual run that used up today's allowance: only a completed one
+     * counts, so a run that failed or was stopped can be started again.
+     */
     public function manualRunToday(): ?AiRun
     {
-        return AiRun::where('trigger', 'manual')->where('created_at', '>=', $this->todayStart())->latest('created_at')->first();
+        return AiRun::where('trigger', 'manual')->where('status', AiRun::COMPLETED)
+            ->where('created_at', '>=', $this->todayStart())->latest('created_at')->first();
+    }
+
+    /**
+     * Today's most recent manual run, whatever its outcome (shown to staff).
+     */
+    public function latestManualToday(): ?AiRun
+    {
+        return AiRun::where('trigger', 'manual')->where('created_at', '>=', $this->todayStart())
+            ->latest('created_at')->orderByDesc('id')->first();
     }
 
     public function activeRun(): ?AiRun
@@ -93,6 +107,7 @@ class SchedulerHealth
         $last = $this->lastTick();
         $nightly = AiRun::where('trigger', 'schedule')->latest('created_at')->first();
         $manual = $this->manualRunToday();
+        $latestManual = $this->latestManualToday();
         $active = $this->activeRun();
         $next = now('Asia/Kolkata')->setTime(1, 0);
         if ($next->isPast()) {
@@ -101,7 +116,7 @@ class SchedulerHealth
 
         $blocked = match (true) {
             $active !== null => 'A discovery run is already in progress.',
-            $manual !== null => 'The manual run has already been used today. It resets at midnight (IST).',
+            $manual !== null => 'Today’s manual run has completed. It resets at midnight (IST).',
             default => null,
         };
 
@@ -119,12 +134,16 @@ class SchedulerHealth
             'manual' => [
                 'can_run' => $blocked === null,
                 'reason' => $blocked,
-                'today' => $manual ? $this->summary($manual) : null,
+                'today' => $latestManual ? $this->summary($latestManual) : null,
             ],
             'active' => $active ? $this->summary($active) : null,
             'limits' => [
                 'max_run_minutes' => (int) $settings->get('max_run_minutes'),
-                'web_search' => $this->searches->summary() + ['enabled' => (bool) $settings->get('use_web_search') && filled($settings->get('tavily_api_key'))],
+                'web_search' => $this->searches->summary() + [
+                    'enabled' => $settings->webSearchBlocker() === null,
+                    'blocker' => $settings->webSearchBlocker(),
+                    'key_source' => $settings->get('tavily_api_key_source'),
+                ],
                 'ai_tokens' => ['used_today' => $aiTokensToday, 'daily_limit' => (int) $settings->get('daily_ai_tokens')],
             ],
         ];
