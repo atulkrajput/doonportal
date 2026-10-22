@@ -197,6 +197,36 @@ function Value({ value }) {
     return <span className="whitespace-pre-line break-words">{String(value)}</span>;
 }
 
+/** Logo, cover and gallery fields of an owner edit, shown as pictures. */
+function ImageValue({ field, value, media }) {
+    const thumb = (mediaId, caption) =>
+        media[mediaId] ? (
+            <a href={media[mediaId]} target="_blank" rel="noopener noreferrer">
+                <img src={media[mediaId]} alt={caption || ''} loading="lazy" className="h-20 w-28 rounded-lg border border-stone-200 bg-stone-100 object-cover" />
+            </a>
+        ) : (
+            <span className="text-xs text-stone-400">Image not found</span>
+        );
+    if (!value || (Array.isArray(value) && !value.length)) {
+        return <span className="text-stone-400">—</span>;
+    }
+    if (field !== 'photos') {
+        return thumb(value);
+    }
+    return (
+        <ul className="flex flex-wrap gap-2">
+            {value.map((ph) => (
+                <li key={ph.media_id} className="w-28">
+                    {thumb(ph.media_id, ph.caption)}
+                    {ph.caption && <p className="mt-0.5 text-xs text-stone-600">{ph.caption}</p>}
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+const IMAGE_FIELDS = ['logo_media_id', 'cover_media_id', 'photos'];
+
 function SubmissionDetail({ id, onDone }) {
     const { data, error, loading } = useApi(`/admin/submissions/${id}`);
     if (loading) {
@@ -224,13 +254,13 @@ function SubmissionDetail({ id, onDone }) {
                             {Object.entries(s.payload).map(([field, value]) => (
                                 <tr key={field}>
                                     <th scope="row" className="py-2 pr-3 text-left font-semibold">
-                                        {humanize(field)}
+                                        {humanize(field.replace(/_media_id$/, ''))}
                                     </th>
                                     <td className="py-2 pr-3 text-stone-600">
-                                        <Value value={ctx.current?.[field]} />
+                                        {IMAGE_FIELDS.includes(field) ? <ImageValue field={field} value={ctx.current?.[field]} media={ctx.media || {}} /> : <Value value={ctx.current?.[field]} />}
                                     </td>
                                     <td className="bg-emerald-50/60 py-2 pl-2">
-                                        <Value value={value} />
+                                        {IMAGE_FIELDS.includes(field) ? <ImageValue field={field} value={value} media={ctx.media || {}} /> : <Value value={value} />}
                                     </td>
                                 </tr>
                             ))}

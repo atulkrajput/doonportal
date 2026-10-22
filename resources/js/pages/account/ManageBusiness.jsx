@@ -45,6 +45,9 @@ const FIELD_LABELS = {
     hours: 'Opening hours',
     services: 'Services & menu',
     social_links: 'Social links',
+    logo_media_id: 'Logo',
+    cover_media_id: 'Cover photo',
+    photos: 'Photos',
 };
 
 const toList = (text) =>
@@ -232,6 +235,152 @@ function SocialEditor({ links, onChange, errors }) {
     );
 }
 
+const MAX_PHOTOS = 10;
+
+/** Pick an image file and upload it; calls onUploaded({ id, url }). */
+function UploadButton({ businessId, kind, label, onUploaded, onError, className = 'btn-secondary' }) {
+    const [busy, setBusy] = useState(false);
+    const pick = async (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            onError('That image is over 5 MB. Please choose a smaller one.');
+            return;
+        }
+        setBusy(true);
+        onError(null);
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            form.append('kind', kind);
+            const { data } = await api.post(`/me/businesses/${businessId}/images`, form, { timeout: 60000 });
+            onUploaded(data.data);
+        } catch (err) {
+            onError(fieldErrors(err).file?.[0] || errorMessage(err));
+        } finally {
+            setBusy(false);
+        }
+    };
+    return (
+        <label className={`${className} cursor-pointer ${busy ? 'pointer-events-none opacity-60' : ''}`}>
+            {busy ? 'Uploading…' : label}
+            <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={pick} disabled={busy} />
+        </label>
+    );
+}
+
+/** Logo, cover and gallery photos. Uploads are private until staff approve the change. */
+function PhotosEditor({ businessId, values, setValues, media, setMedia, errors }) {
+    const [error, setError] = useState(null);
+    const photos = values.photos || [];
+    const remember = (m) => setMedia((all) => ({ ...all, [m.id]: m.url }));
+    const setPhotos = (list) => setValues((v) => ({ ...v, photos: list }));
+    const photoErrors = Object.keys(errors).filter((k) => k.startsWith('photos'));
+
+    const single = (name, kind, title, hint, shape) => {
+        const url = values[name] ? media[values[name]] : null;
+        return (
+            <div>
+                <p className="text-sm font-medium text-stone-700">{title}</p>
+                <div className="mt-2 flex items-center gap-3">
+                    <div className={`${shape} flex shrink-0 items-center justify-center overflow-hidden border border-stone-200 bg-stone-100 text-xs text-stone-500`}>
+                        {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : 'None'}
+                    </div>
+                    <div className="flex flex-col items-start gap-2">
+                        <UploadButton
+                            businessId={businessId}
+                            kind={kind}
+                            label={url ? 'Replace' : 'Upload'}
+                            onError={setError}
+                            onUploaded={(m) => {
+                                remember(m);
+                                setValues((v) => ({ ...v, [name]: m.id }));
+                            }}
+                        />
+                        {url && (
+                            <button type="button" className="text-sm text-stone-600 underline hover:text-red-700" onClick={() => setValues((v) => ({ ...v, [name]: null }))}>
+                                Remove
+                            </button>
+                        )}
+                    </div>
+                </div>
+                <p className="mt-1 text-xs text-stone-500">{hint}</p>
+                <Err errors={errors} name={name} />
+            </div>
+        );
+    };
+
+    return (
+        <div className="space-y-6">
+            {error && (
+                <p role="alert" className="text-sm text-red-700">
+                    {error}
+                </p>
+            )}
+            <div className="grid gap-6 sm:grid-cols-[auto_1fr]">
+                {single('logo_media_id', 'logo', 'Logo', 'Square works best.', 'h-20 w-20 rounded-xl')}
+                {single('cover_media_id', 'cover', 'Cover photo', 'Shown at the top of your listing. Wide (landscape) works best.', 'h-20 w-36 rounded-xl')}
+            </div>
+            <div>
+                <p className="text-sm font-medium text-stone-700">
+                    Gallery{' '}
+                    <span className="font-normal text-stone-500">
+                        ({photos.length} of {MAX_PHOTOS})
+                    </span>
+                </p>
+                {photos.length > 0 && (
+                    <ul className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        {photos.map((ph, i) => (
+                            <li key={ph.media_id} className="overflow-hidden rounded-xl border border-stone-200">
+                                <img src={media[ph.media_id]} alt="" className="aspect-[4/3] w-full bg-stone-100 object-cover" />
+                                <div className="space-y-2 p-2">
+                                    <input
+                                        className="input text-sm"
+                                        placeholder="Caption (optional)"
+                                        maxLength={150}
+                                        aria-label={`Caption for photo ${i + 1}`}
+                                        value={ph.caption ?? ''}
+                                        onChange={(e) => setPhotos(photos.map((x, j) => (j === i ? { ...x, caption: e.target.value } : x)))}
+                                    />
+                                    <div className="flex gap-3 text-xs">
+                                        {i > 0 && (
+                                            <button type="button" className="underline" onClick={() => setPhotos(photos.map((x, j) => (j === i - 1 ? photos[i] : j === i ? photos[i - 1] : x)))}>
+                                                Move earlier
+                                            </button>
+                                        )}
+                                        <button type="button" className="ml-auto text-stone-600 underline hover:text-red-700" onClick={() => setPhotos(photos.filter((_, j) => j !== i))}>
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+                {photoErrors.length > 0 && <p className="mt-2 text-sm text-red-700">{errors[photoErrors[0]][0]}</p>}
+                {photos.length < MAX_PHOTOS && (
+                    <div className="mt-3">
+                        <UploadButton
+                            businessId={businessId}
+                            kind="photo"
+                            label="+ Add a photo"
+                            onError={setError}
+                            onUploaded={(m) => {
+                                remember(m);
+                                setPhotos([...photos, { media_id: m.id, caption: '' }]);
+                            }}
+                        />
+                    </div>
+                )}
+            </div>
+            <p className="text-xs text-stone-500">
+                JPEG, PNG or WebP, up to 5 MB each. Only use photos you took or have permission to use. New photos show on your listing once our team approves your changes.
+            </p>
+        </div>
+    );
+}
+
 function DetailsTab({ business, onSubmitted }) {
     const pending = business.pending_edit;
     const start = { ...business.current, ...(pending?.payload || {}) };
@@ -240,6 +389,7 @@ function DetailsTab({ business, onSubmitted }) {
         amenities: (start.amenities || []).join(', '),
         payment_methods: (start.payment_methods || []).join(', '),
     });
+    const [media, setMedia] = useState(business.media || {});
     const [errors, setErrors] = useState({});
     const [message, setMessage] = useState(null);
     const [busy, setBusy] = useState(false);
@@ -258,6 +408,7 @@ function DetailsTab({ business, onSubmitted }) {
                 payment_methods: toList(values.payment_methods),
                 services: values.services.filter((s) => s.name.trim()),
                 social_links: values.social_links.filter((l) => l.url.trim()),
+                photos: (values.photos || []).map((ph) => ({ media_id: ph.media_id, caption: ph.caption?.trim() || null })),
             });
             onSubmitted('Thanks! Your changes have been sent to our team and will go live once approved, usually within 2 working days.');
             window.scrollTo(0, 0);
@@ -322,6 +473,10 @@ function DetailsTab({ business, onSubmitted }) {
                     <Input label="Payment methods" name="payment_methods" placeholder="UPI, Cash, Cards" {...p} />
                     <p className="-mt-2 text-xs text-stone-500">Separate items with commas.</p>
                 </div>
+            </Panel>
+
+            <Panel title="Photos">
+                <PhotosEditor businessId={business.id} values={values} setValues={setValues} media={media} setMedia={setMedia} errors={errors} />
             </Panel>
 
             <Panel title="Location & contact">

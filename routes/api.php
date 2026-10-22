@@ -77,6 +77,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('{business:id}', 'show')->name('show');
             Route::post('{business:id}/edits', 'proposeEdit')->middleware('throttle:community')->name('edits');
+            Route::post('{business:id}/images', 'uploadImage')->middleware('throttle:30,1')->name('images');
             Route::get('{business:id}/stats', 'stats')->name('stats');
             Route::get('{business:id}/reviews', 'reviews')->name('reviews');
             Route::put('{business:id}/reviews/{review:id}/reply', 'reply')->name('reviews.reply');

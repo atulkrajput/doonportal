@@ -7,6 +7,7 @@ use App\Models\AiDiscovery;
 use App\Models\Area;
 use App\Models\Business;
 use App\Services\AuditLogger;
+use App\Services\BusinessImages\BusinessImageStore;
 use App\Services\BusinessWriter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -21,7 +22,11 @@ class DiscoveryReview
     /** Fields staff may correct before approving. */
     public const EDITABLE = ['description', 'address_line', 'locality', 'pincode', 'phone', 'whatsapp', 'email', 'website'];
 
-    public function __construct(private readonly BusinessWriter $businesses, private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly BusinessWriter $businesses,
+        private readonly AuditLogger $audit,
+        private readonly BusinessImageStore $images,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $changes  validated: name, category_id and EDITABLE fields
@@ -37,6 +42,14 @@ class DiscoveryReview
                 if (array_key_exists($field, $changes)) {
                     $data[$field] = $changes[$field] === '' ? null : $changes[$field];
                 }
+            }
+            // Staff may drop the suggested image, or give one of their own with its credit.
+            if (! empty($changes['remove_image'])) {
+                $data['image'] = null;
+            } elseif (filled($changes['image_url'] ?? null)) {
+                $data['image'] = ['url' => $changes['image_url'], 'source' => 'staff', 'credit' => $changes['image_credit'] ?? null, 'page_url' => null, 'license' => null];
+            } elseif (array_key_exists('image_credit', $changes) && ! empty($data['image'])) {
+                $data['image']['credit'] = $changes['image_credit'];
             }
             $discovery->forceFill([
                 'name' => $changes['name'] ?? $discovery->name,
@@ -59,7 +72,7 @@ class DiscoveryReview
             throw ValidationException::withMessages(['category_id' => ['Choose a category before approving.']]);
         }
 
-        return DB::transaction(function () use ($discovery, $actor) {
+        $business = DB::transaction(function () use ($discovery, $actor) {
             $d = $discovery->data;
             $osm = $discovery->source === 'osm';
             $area = $this->area($d['locality'] ?? null, $d['address_line'] ?? null);
@@ -106,6 +119,33 @@ class DiscoveryReview
 
             return $business;
         });
+
+        // Outside the transaction: a download that fails never blocks the approval.
+        $this->attachImage($discovery, $business, $actor);
+
+        return $business;
+    }
+
+    /**
+     * Download the approved image into the business's images and use it as the cover.
+     */
+    private function attachImage(AiDiscovery $discovery, Business $business, Admin $actor): void
+    {
+        $image = $discovery->data['image'] ?? null;
+        if (empty($image['url'])) {
+            return;
+        }
+
+        try {
+            $media = $this->images->storeFromUrl($image['url'], $business, 'cover', [
+                'alt_text' => $business->name,
+                'credit' => $image['credit'] ?? null,
+            ]);
+            $business->forceFill(['cover_media_id' => $media->id])->save();
+            $this->audit->log('business.cover_added', $business, null, ['media_id' => $media->id, 'source' => $image['source'] ?? null], $actor);
+        } catch (\Throwable $e) {
+            $discovery->forceFill(['review_notes' => trim(($discovery->review_notes ? $discovery->review_notes.' ' : '').'Image not added: '.$e->getMessage())])->save();
+        }
     }
 
     public function reject(AiDiscovery $discovery, Admin $actor, ?string $notes = null, ?string $duplicateOf = null): AiDiscovery

@@ -25,6 +25,8 @@ class BusinessWriter
 
     public const SOCIAL_FIELDS = ['platform', 'url'];
 
+    public const PHOTO_FIELDS = ['media_id', 'caption', 'status', 'sort_order'];
+
     public function __construct(private readonly AuditedWriter $writer) {}
 
     /**
@@ -72,6 +74,12 @@ class BusinessWriter
         if (array_key_exists('services', $data)) {
             $rows = collect($data['services'])->values()->map(fn ($s, $i) => [...$s, 'sort_order' => $i])->all();
             $syncs['services'] = fn (Business $b) => $this->writer->replaceChildren($b->services(), $rows, self::SERVICE_FIELDS);
+        }
+        if (array_key_exists('photos', $data)) {
+            $rows = collect($data['photos'])->values()->map(fn ($p, $i) => [
+                'media_id' => $p['media_id'], 'caption' => $p['caption'] ?? null, 'status' => 'APPROVED', 'sort_order' => $i,
+            ])->all();
+            $syncs['photos'] = fn (Business $b) => $this->writer->replaceChildren($b->photos(), $rows, self::PHOTO_FIELDS);
         }
         if (array_key_exists('social_links', $data)) {
             $syncs['social_links'] = fn (Business $b) => $this->writer->replaceChildren($b->socialLinks(), $data['social_links'], self::SOCIAL_FIELDS);

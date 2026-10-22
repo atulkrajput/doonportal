@@ -58,6 +58,9 @@ class AiDiscoveryController extends AdminController
             'whatsapp' => ['sometimes', 'nullable', 'string', 'regex:/^\+?[0-9][0-9 \-]{6,18}$/'],
             'email' => ['sometimes', 'nullable', 'email', 'max:255'],
             'website' => ['sometimes', 'nullable', 'url:http,https', 'max:2048'],
+            'remove_image' => ['sometimes', 'boolean'],
+            'image_url' => ['sometimes', 'nullable', 'url:http,https', 'max:2048'],
+            'image_credit' => ['sometimes', 'nullable', 'string', 'max:240'],
         ]);
 
         return response()->json(['data' => $this->present($review->edit($discovery, $data, $request->user())->load(['category:id,name,slug']))]);

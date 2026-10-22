@@ -11,14 +11,18 @@ use App\Http\Resources\Account\MyReviewResource;
 use App\Http\Resources\Account\SubmissionResource;
 use App\Models\AnalyticsEvent;
 use App\Models\Business;
+use App\Models\Media;
 use App\Models\Review;
 use App\Models\Submission;
+use App\Services\BusinessImages\BusinessImageStore;
 use App\Services\Community\OwnerEditService;
 use App\Services\Community\ReviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The business owner's tools for listings they own: proposed edits (approved
@@ -94,10 +98,46 @@ class OwnerBusinessController extends Controller
             'status' => $business->status->value,
             'is_verified' => $business->status->isVerified(),
             'is_published' => $business->is_published,
-            'current' => $this->edits->snapshot($business),
+            'current' => $current = $this->edits->snapshot($business),
             'pending_edit' => ($pending = $this->edits->pending($business)) ? new SubmissionResource($pending) : null,
+            'media' => self::mediaUrls([$current, $pending?->payload ?? []]),
             'last_decision' => $lastDecided ? new SubmissionResource($lastDecided) : null,
         ]]);
+    }
+
+    /**
+     * Upload a logo, cover or gallery photo. It is saved to the business's images
+     * but only shows on the listing once staff approve the change that uses it.
+     */
+    public function uploadImage(Request $request, Business $business, BusinessImageStore $images): JsonResponse
+    {
+        $this->ensureOwner($request, $business);
+        $data = $request->validate([
+            'file' => ['required', 'file', 'max:5120', 'mimetypes:image/jpeg,image/png,image/webp'],
+            'kind' => ['required', Rule::in(BusinessImageStore::KINDS)],
+        ]);
+
+        try {
+            $media = $images->storeUpload($data['file'], $business, $data['kind'], ['alt_text' => $business->name]);
+        } catch (\RuntimeException $e) {
+            throw ValidationException::withMessages(['file' => [$e->getMessage()]]);
+        }
+
+        return response()->json(['data' => ['id' => $media->id, 'url' => $media->url(), 'kind' => $data['kind']]], 201);
+    }
+
+    /**
+     * id => url for every image referenced in these owner-edit value sets.
+     *
+     * @param  list<array<string, mixed>>  $sets
+     * @return array<string, string>
+     */
+    public static function mediaUrls(array $sets): array
+    {
+        $ids = collect($sets)->flatMap(fn ($v) => [$v['logo_media_id'] ?? null, $v['cover_media_id'] ?? null, ...array_column($v['photos'] ?? [], 'media_id')])
+            ->filter()->unique()->values();
+
+        return Media::whereIn('id', $ids)->get()->mapWithKeys(fn (Media $m) => [$m->id => $m->url()])->all();
     }
 
     public function proposeEdit(OwnerBusinessEditRequest $request, Business $business): JsonResponse

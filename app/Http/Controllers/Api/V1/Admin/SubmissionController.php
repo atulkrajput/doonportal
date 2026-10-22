@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\SubmissionStatus;
 use App\Enums\SubmissionType;
+use App\Http\Controllers\Api\V1\Account\OwnerBusinessController;
 use App\Http\Requests\Admin\AdminIndexRequest;
 use App\Http\Requests\Admin\ModerationDecisionRequest;
 use App\Http\Resources\Account\SubmissionResource;
@@ -53,6 +54,7 @@ class SubmissionController extends AdminController
 
         if ($submission->type === SubmissionType::OwnerEdit && $submission->entity instanceof Business) {
             $context['current'] = Arr::only($edits->snapshot($submission->entity), array_keys($submission->payload));
+            $context['media'] = OwnerBusinessController::mediaUrls([$context['current'], $submission->payload]);
         }
 
         if ($submission->type === SubmissionType::Business) {

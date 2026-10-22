@@ -40,6 +40,14 @@ Guard rails (Admin > AI settings): a run stops cleanly at **Maximum run time** (
 
 Every step and external call is written to `ai_run_logs` (service run/osm/web/ai, HTTP status, duration, tokens; never keys or prompts) and shown as a live log in Admin > Discovery runs. The monthly web search count comes from this log. The footer credits © OpenStreetMap contributors (ODbL).
 
+### Business images
+
+- **Discovery**: each candidate gets at most one suggested photo: a Wikimedia Commons image linked from its OpenStreetMap tags (`wikimedia_commons` / `image`; freely licensed, credited "Photo: {author}, {licence} via Wikimedia Commons"), otherwise the share image (`og:image` / `twitter:image`) of the business's own website. Never from search results or other sites. Staff see it on the discovery card and can remove it or paste another URL and credit. On approval it is downloaded and becomes the cover; a broken image never blocks approval (the reason goes into the review notes). Image calls are logged as service `image`.
+- **Owners** upload a logo, cover and up to 10 gallery photos (JPEG/PNG/WebP, max 5 MB, at least 120 px) on their Manage business page. Uploads are stored straight away but appear only when staff approve the owner edit that uses them; the review screen shows them as pictures. An owner can only propose images uploaded for their own business.
+- **Backfill**: `php artisan doon:business-images [--limit=50] [--dry-run]` adds covers to published businesses without one, from the same two sources.
+- **Storage**: one folder on the public disk, named by business: `storage/app/public/businesses/<business-id>_<logo|cover|photo>-<random>.<ext>` (needs `php artisan storage:link`). With the PHP GD extension, images are resized to at most 1600 px and re-encoded (which strips EXIF/location data); without it the checked original is kept.
+- **Safety**: only http(s) on ports 80/443 to public IP addresses are fetched (checked again on every redirect, at most 3), with size and time limits, and the bytes must be a real JPEG/PNG/WebP.
+
 ## Target pipeline (Phase 14)
 
 ```

@@ -294,6 +294,13 @@ function DiscoveryCard({ item, selected, onSelect, onChanged }) {
         </label>
     );
 
+    const saveDraft = () => {
+        const { image_url, image_credit, ...rest } = draft;
+        const imageChanged = (image_url ?? '') !== (d.image?.url ?? '') || (image_credit ?? '') !== (d.image?.credit ?? '');
+        const payload = !imageChanged ? rest : image_url ? { ...rest, image_url, image_credit: image_credit || null } : { ...rest, remove_image: true };
+        return api.patch(`/admin/ai/discoveries/${item.id}`, payload);
+    };
+
     const hours = (d.hours || []).reduce((acc, h) => {
         acc[h.day_of_week] = h.is_closed ? 'Closed' : [acc[h.day_of_week], `${h.opens_at}–${h.closes_at}`].filter((x) => x && x !== 'Closed').join(', ');
         return acc;
@@ -304,6 +311,24 @@ function DiscoveryCard({ item, selected, onSelect, onChanged }) {
             <div className="flex items-start gap-3">
                 {item.status === 'PENDING' && <input type="checkbox" className="mt-1.5 h-4 w-4" checked={selected} onChange={(e) => onSelect(e.target.checked)} aria-label={`Select ${item.name}`} />}
                 <div className="min-w-0 flex-1">
+                    {d.image?.url && !editing && (
+                        <figure className="float-right mb-2 ml-3 w-36 sm:w-44">
+                            <a href={d.image.page_url || d.image.url} target="_blank" rel="noopener noreferrer nofollow">
+                                <img src={d.image.url} alt={`Suggested photo of ${item.name}`} loading="lazy" referrerPolicy="no-referrer" className="aspect-[4/3] w-full rounded-lg border border-stone-200 bg-stone-100 object-cover" />
+                            </a>
+                            <figcaption className="mt-1 text-[11px] leading-tight text-stone-500">{d.image.credit || 'No credit'}</figcaption>
+                            {item.status === 'PENDING' && (
+                                <button
+                                    type="button"
+                                    className="mt-1 text-xs text-stone-600 underline hover:text-red-700"
+                                    disabled={Boolean(busy)}
+                                    onClick={() => act('image', () => api.patch(`/admin/ai/discoveries/${item.id}`, { remove_image: true }))}
+                                >
+                                    {busy === 'image' ? 'Removing…' : 'Remove image'}
+                                </button>
+                            )}
+                        </figure>
+                    )}
                     <div className="flex flex-wrap items-center gap-2">
                         <p className="font-display text-lg font-bold">{item.name}</p>
                         <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold">{item.category?.name ?? 'No category'}</span>
@@ -329,6 +354,8 @@ function DiscoveryCard({ item, selected, onSelect, onChanged }) {
                             {field('pincode', 'PIN code')}
                             {field('phone', 'Phone')}
                             {field('website', 'Website', { type: 'url' })}
+                            {field('image_url', 'Image URL (blank for none)', { type: 'url', placeholder: 'https://' })}
+                            {field('image_credit', 'Image credit', { maxLength: 240 })}
                             <label className="block sm:col-span-2">
                                 <span className="text-xs font-medium text-stone-600">Description</span>
                                 <textarea className="input mt-0.5" rows={2} value={draft.description ?? ''} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
@@ -400,7 +427,7 @@ function DiscoveryCard({ item, selected, onSelect, onChanged }) {
                         <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-100 pt-3">
                             {editing ? (
                                 <>
-                                    <button type="button" className="btn-primary" disabled={Boolean(busy)} onClick={() => act('save', () => api.patch(`/admin/ai/discoveries/${item.id}`, draft))}>
+                                    <button type="button" className="btn-primary" disabled={Boolean(busy)} onClick={() => act('save', saveDraft)}>
                                         {busy === 'save' ? 'Saving…' : 'Save changes'}
                                     </button>
                                     <button type="button" className="btn-secondary" onClick={() => setEditing(false)}>
@@ -416,7 +443,17 @@ function DiscoveryCard({ item, selected, onSelect, onChanged }) {
                                         type="button"
                                         className="btn-secondary"
                                         onClick={() => {
-                                            setDraft({ name: item.name, description: d.description, address_line: d.address_line, locality: d.locality, pincode: d.pincode, phone: d.phone, website: d.website });
+                                            setDraft({
+                                                name: item.name,
+                                                description: d.description,
+                                                address_line: d.address_line,
+                                                locality: d.locality,
+                                                pincode: d.pincode,
+                                                phone: d.phone,
+                                                website: d.website,
+                                                image_url: d.image?.url ?? '',
+                                                image_credit: d.image?.credit ?? '',
+                                            });
                                             setEditing(true);
                                         }}
                                     >

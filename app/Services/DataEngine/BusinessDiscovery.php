@@ -57,6 +57,7 @@ class BusinessDiscovery
         private readonly AuditLogger $audit,
         private readonly RunLog $log,
         private readonly WebSearchBudget $searchBudget,
+        private readonly ImageFinder $images,
     ) {}
 
     /**
@@ -199,7 +200,13 @@ class BusinessDiscovery
             }
         }
 
-        // 3. Short factual descriptions, written only from what the source says.
+        // 3. One image per find (Wikimedia Commons via OSM, or the business's own website), for review.
+        foreach ($found as &$candidate) {
+            $candidate['data']['image'] = now()->addMinutes(2)->lessThan($this->deadline) ? $this->images->find($candidate) : null;
+        }
+        unset($candidate);
+
+        // 4. Short factual descriptions, written only from what the source says.
         $found = $this->describe($category, $found, $stat);
 
         foreach ($found as $candidate) {

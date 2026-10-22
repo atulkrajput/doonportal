@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -70,6 +70,53 @@ function Hours({ hours, openNow }) {
     );
 }
 
+/** Gallery photos; a click opens the full image. */
+function Photos({ photos, name }) {
+    const [open, setOpen] = useState(null);
+    useEffect(() => {
+        if (open === null) return undefined;
+        const onKey = (e) => {
+            if (e.key === 'Escape') setOpen(null);
+            if (e.key === 'ArrowRight') setOpen((i) => (i + 1) % photos.length);
+            if (e.key === 'ArrowLeft') setOpen((i) => (i - 1 + photos.length) % photos.length);
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [open, photos.length]);
+    const current = open !== null ? photos[open] : null;
+
+    return (
+        <section>
+            <h2 className="font-display text-xl font-bold">Photos</h2>
+            <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {photos.map((ph, i) => (
+                    <li key={ph.id}>
+                        <button type="button" className="block w-full overflow-hidden rounded-xl" onClick={() => setOpen(i)} aria-label={`Open photo ${i + 1}${ph.caption ? `: ${ph.caption}` : ''}`}>
+                            <img src={ph.media.url} alt={ph.caption || ph.media.alt || `${name} photo ${i + 1}`} loading="lazy" className="aspect-[4/3] w-full bg-stone-100 object-cover transition hover:scale-105" />
+                        </button>
+                        {ph.caption && <p className="mt-1 text-xs text-stone-600">{ph.caption}</p>}
+                    </li>
+                ))}
+            </ul>
+            {current && (
+                <div role="dialog" aria-modal="true" aria-label={`${name} photos`} className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-4" onClick={() => setOpen(null)}>
+                    <img src={current.media.url} alt={current.caption || current.media.alt || name} className="max-h-[80vh] max-w-full rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
+                    <p className="mt-3 text-center text-sm text-white">
+                        {current.caption}
+                        {current.media.credit && <span className="block text-xs text-stone-300">{current.media.credit}</span>}
+                        <span className="block text-xs text-stone-400">
+                            {open + 1} of {photos.length} · Esc to close
+                        </span>
+                    </p>
+                    <button type="button" className="absolute right-4 top-4 rounded-full bg-white/10 px-3 py-1 text-white hover:bg-white/20" onClick={() => setOpen(null)}>
+                        Close
+                    </button>
+                </div>
+            )}
+        </section>
+    );
+}
+
 function BusinessView({ business }) {
     const { user } = useAuth();
     const { data: owned } = useApi(user?.is_business_owner ? '/me/businesses' : null);
@@ -77,6 +124,7 @@ function BusinessView({ business }) {
     const { data: services } = useApi(`/businesses/${business.slug}/services`);
     const { data: offers } = useApi(`/businesses/${business.slug}/offers`);
     const { data: related } = useApi(`/businesses/${business.slug}/related`);
+    const { data: photos } = useApi(`/businesses/${business.slug}/photos`);
     const primary = business.categories?.[0];
     const crumbs = [['/', 'Home'], ...(primary ? [[`/businesses/${primary.slug}`, primary.name]] : [['/businesses', 'Businesses']]), [null, business.name]];
 
@@ -88,6 +136,7 @@ function BusinessView({ business }) {
         <article>
             <div className="relative">
                 <Cover src={business.cover?.url} alt={business.cover?.alt} title={business.name} className="h-48 sm:h-72" initial={false} />
+                {business.cover?.credit && <p className="absolute bottom-12 right-3 max-w-[70%] truncate rounded bg-black/50 px-2 py-0.5 text-[11px] text-white sm:bottom-14">{business.cover.credit}</p>}
             </div>
             <div className="container-page">
                 <div className="relative -mt-10 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-8">
@@ -97,7 +146,10 @@ function BusinessView({ business }) {
                         <DemoBadge show={business.is_demo} />
                         {business.status === 'CLOSED' && <span className="rounded-full bg-stone-200 px-2 py-0.5 text-xs font-semibold">Permanently closed</span>}
                     </div>
-                    <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">{business.name}</h1>
+                    <div className="mt-2 flex items-center gap-3">
+                        {business.logo?.url && <img src={business.logo.url} alt={`${business.name} logo`} className="h-14 w-14 shrink-0 rounded-xl border border-stone-200 bg-white object-cover sm:h-16 sm:w-16" />}
+                        <h1 className="font-display text-3xl font-bold sm:text-4xl">{business.name}</h1>
+                    </div>
                     {business.tagline && <p className="mt-1 text-stone-600">{business.tagline}</p>}
                     <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-stone-600">
                         <Rating rating={business.rating} />
@@ -126,6 +178,7 @@ function BusinessView({ business }) {
                                 <p className="mt-2 whitespace-pre-line leading-relaxed text-stone-700">{business.description}</p>
                             </section>
                         )}
+                        {photos?.data?.length > 0 && <Photos photos={photos.data} name={business.name} />}
                         {offers?.data?.length > 0 && (
                             <section>
                                 <h2 className="font-display text-xl font-bold">Offers</h2>

@@ -25,10 +25,11 @@ class OwnerEditService
     public const ATTRIBUTES = [
         'tagline', 'description', 'address_line', 'locality', 'pincode',
         'phone', 'whatsapp', 'email', 'website', 'price_range', 'amenities', 'payment_methods',
+        'logo_media_id', 'cover_media_id',
     ];
 
     /** Child rows an owner may replace. */
-    public const RELATIONS = ['hours', 'services', 'social_links'];
+    public const RELATIONS = ['hours', 'services', 'social_links', 'photos'];
 
     public function __construct(private readonly AuditLogger $audit) {}
 
@@ -39,7 +40,7 @@ class OwnerEditService
      */
     public function snapshot(Business $business): array
     {
-        $business->loadMissing(['hours', 'services', 'socialLinks']);
+        $business->loadMissing(['hours', 'services', 'socialLinks', 'approvedPhotos']);
 
         $values = [];
         foreach (self::ATTRIBUTES as $key) {
@@ -63,6 +64,11 @@ class OwnerEditService
         $values['social_links'] = $business->socialLinks->map(fn ($l) => [
             'platform' => $l->platform,
             'url' => $l->url,
+        ])->values()->all();
+
+        $values['photos'] = $business->approvedPhotos->map(fn ($p) => [
+            'media_id' => $p->media_id,
+            'caption' => $p->caption,
         ])->values()->all();
 
         return $values;
@@ -148,6 +154,7 @@ class OwnerEditService
             ])->values()->all(),
             'social_links' => collect($value)->map(fn ($l) => ['platform' => $l['platform'], 'url' => $l['url']])
                 ->sortBy('platform')->values()->all(),
+            'photos' => collect($value)->map(fn ($p) => ['media_id' => $p['media_id'], 'caption' => ($p['caption'] ?? null) ?: null])->values()->all(),
             'price_range' => $value === null ? null : (int) $value,
             default => $value,
         };
