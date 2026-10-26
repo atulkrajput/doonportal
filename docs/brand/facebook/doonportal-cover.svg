@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1640 624" width="1640" height="624">
+  <defs>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&amp;family=Oswald:wght@600&amp;family=Poppins:wght@500&amp;display=block');</style>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#11244a"/>
+      <stop offset="1" stop-color="#1b3461"/>
+    </linearGradient>
+  </defs>
+  <rect width="1640" height="624" fill="url(#sky)"/>
+  <!-- Sun rising behind the Doon hills -->
+  <circle cx="820" cy="445" r="118" fill="#f07c1e"/>
+  <!-- Hills, back to front -->
+  <path d="M0 470 L140 400 L260 440 L420 360 L560 430 L700 380 L860 450 L1000 370 L1150 440 L1300 380 L1460 430 L1640 390 V624 H0 Z" fill="#34548f"/>
+  <path d="M0 520 L180 450 L330 500 L500 440 L680 510 L840 455 L1010 515 L1180 450 L1360 505 L1520 460 L1640 490 V624 H0 Z" fill="#233f74"/>
+  <path d="M0 575 L220 520 L420 560 L640 515 L860 565 L1080 525 L1300 570 L1480 530 L1640 555 V624 H0 Z" fill="#0c1a36"/>
+  <!-- Copy -->
+  <text x="820" y="200" text-anchor="middle" font-family="Oswald, 'Arial Narrow', sans-serif" font-weight="600" font-size="128" letter-spacing="8" fill="#f7f4ee">ALL THINGS DOON.</text>
+  <text x="820" y="280" text-anchor="middle" font-family="Caveat, cursive" font-weight="700" font-size="64" fill="#f6a057">Discover. Connect. Belong.</text>
+  <text x="820" y="604" text-anchor="middle" font-family="Poppins, sans-serif" font-weight="500" font-size="26" letter-spacing="4" fill="#f7f4ee">doonportal.com</text>
+</svg>
